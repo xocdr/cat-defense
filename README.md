@@ -2,6 +2,10 @@
 
 A merge-and-defend mobile game built in **Godot 4.7 (Mobile)**.
 
+## Download
+
+Get the latest Android build here: [CatDefense.apk](https://github.com/xocdr/cat-defense/releases/download/v0.1.0/CatDefense.apk)
+
 ## Gameplay
 
 Merge cats to grow their power, then defend your wall against waves of incoming enemies:
