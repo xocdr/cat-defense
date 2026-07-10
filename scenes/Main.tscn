@@ -1,0 +1,680 @@
+[gd_scene format=3 uid="uid://2mxq0xql2f66"]
+
+[ext_resource type="Script" uid="uid://c1y3nfypl66h7" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" uid="uid://cqt57mqpm6cvr" path="res://scripts/wall.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://dsgin3goihp1g" path="res://Png/Area/Area1.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://ckq1kvt8xehke" path="res://Png/Ui/SettingBtn.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://4ycpmficmpxi" path="res://Png/Ui/BgPaused.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://dvybni3x24g3r" path="res://Png/Ui/BtnMusic.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://g6hef357o6jn" path="res://Png/Ui/BtnSound.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://cccox8lpfmsg6" path="res://Png/Ui/BtnVibra.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://dpeae6sho3s6a" path="res://Png/Ui/BtnOrange.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://b7qp7snqvg5or" path="res://Png/Ui/BtnGreen.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://byxx32m08cb62" path="res://Png/Ui/LosePopUp.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://drywm52do7fp" path="res://Png/Ui/WinPopUp.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://bswc24sbb720n" path="res://Png/Ui/WinBonus.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://x4v4cvdd85v5" path="res://Png/Ui/CoinBar.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://dr0bgk0fn0c5y" path="res://Png/Ui/CoinIcon.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://be8ghwl0bcko" path="res://Png/Ui/WaveBar.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://cvopths88g1oo" path="res://Png/Ui/YellowBox.png" id="17"]
+[ext_resource type="Texture2D" uid="uid://dtb12cy7sky82" path="res://Png/Ui/AddonIcon8.png" id="18"]
+[ext_resource type="Texture2D" uid="uid://bfff00ujm61qo" path="res://Png/Ui/AddonIcon6.png" id="19"]
+[ext_resource type="Texture2D" uid="uid://d2g7x1knukkqp" path="res://Png/Ui/AddonIcon7.png" id="20"]
+[ext_resource type="Texture2D" uid="uid://dho3xf7202dht" path="res://Png/Ui/AddonBoxNumber.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://dype0f5biuc60" path="res://Png/Ui/WallIcon.png" id="22"]
+[ext_resource type="Texture2D" uid="uid://sp0ghcg5w25w" path="res://Png/Characters/C1/Idle/Character1-Idle_00.png" id="23"]
+
+[node name="Main" type="Node2D" unique_id=1310500096]
+process_mode = 3
+script = ExtResource("1")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=892420364]
+scale = Vector2(0.598, 0.678)
+texture = ExtResource("3")
+centered = false
+
+[node name="Wall" type="Node2D" parent="." unique_id=1544036966]
+process_mode = 1
+script = ExtResource("2")
+
+[node name="Slots" type="Node2D" parent="." unique_id=190761558]
+process_mode = 1
+
+[node name="World" type="Node2D" parent="." unique_id=1406467190]
+process_mode = 1
+y_sort_enabled = true
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1343353335]
+
+[node name="TopBar" type="Control" parent="UI" unique_id=47843329]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 70.0
+mouse_filter = 2
+
+[node name="CoinBar" type="TextureRect" parent="UI/TopBar" unique_id=572142825]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 214.0
+offset_bottom = 58.0
+mouse_filter = 2
+texture = ExtResource("14")
+expand_mode = 1
+
+[node name="CoinIcon" type="TextureRect" parent="UI/TopBar/CoinBar" unique_id=1390809280]
+layout_mode = 0
+offset_left = -12.0
+offset_top = -2.0
+offset_right = 36.0
+offset_bottom = 46.0
+mouse_filter = 2
+texture = ExtResource("15")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinLabel" type="Label" parent="UI/TopBar/CoinBar" unique_id=667672048]
+layout_mode = 0
+offset_left = 46.0
+offset_top = 6.0
+offset_right = 180.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "150"
+vertical_alignment = 1
+
+[node name="WaveBar" type="TextureRect" parent="UI/TopBar" unique_id=412690393]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -282.0
+offset_top = 10.0
+offset_right = -92.0
+offset_bottom = 64.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = ExtResource("16")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="WaveLabel" type="Label" parent="UI/TopBar/WaveBar" unique_id=967065036]
+layout_mode = 0
+offset_left = 51.0
+offset_top = 15.0
+offset_right = 177.0
+offset_bottom = 51.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 19
+text = "Wave 1 / 10"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SettingsButton" type="TextureButton" parent="UI/TopBar" unique_id=1152716246]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -76.0
+offset_top = 12.0
+offset_right = -24.0
+offset_bottom = 64.0
+texture_normal = ExtResource("4")
+ignore_texture_size = true
+stretch_mode = 4
+
+[node name="WaveBanner" type="Label" parent="UI" unique_id=1725521524]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 120.0
+offset_right = 300.0
+offset_bottom = 180.0
+pivot_offset = Vector2(300, 30)
+theme_override_colors/font_color = Color(0.85, 0.15, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.05, 0.05, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 44
+text = "Wave 1 Incoming!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomBar" type="Control" parent="UI" unique_id=43960771]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="BuyButton" type="TextureButton" parent="UI/BottomBar" unique_id=1822132050]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 14.0
+offset_right = 365.0
+offset_bottom = 92.0
+texture_normal = ExtResource("10")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="CatHead" type="TextureRect" parent="UI/BottomBar/BuyButton" unique_id=1224302761]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.104
+anchor_top = 0.13800001
+anchor_right = 0.9250001
+anchor_bottom = 0.79600006
+offset_left = -6.4400005
+offset_top = -6.764001
+offset_right = -135.37502
+offset_bottom = 5.911995
+mouse_filter = 2
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="UI/BottomBar/BuyButton" unique_id=915599667]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 9.0
+offset_right = 230.0
+offset_bottom = 39.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.35, 0.05, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 20
+text = "Level 1"
+
+[node name="CostIcon" type="TextureRect" parent="UI/BottomBar/BuyButton" unique_id=2009052670]
+layout_mode = 0
+offset_left = 79.0
+offset_top = 36.0
+offset_right = 103.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("15")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostLabel" type="Label" parent="UI/BottomBar/BuyButton" unique_id=264039178]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 34.0
+offset_right = 229.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.35, 0.05, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "40"
+
+[node name="RepairButton" type="TextureButton" parent="UI/BottomBar" unique_id=1793307810]
+layout_mode = 0
+offset_left = 385.0
+offset_top = 14.0
+offset_right = 620.0
+offset_bottom = 92.0
+texture_normal = ExtResource("9")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Icon" type="TextureRect" parent="UI/BottomBar/RepairButton" unique_id=1491800565]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.081
+anchor_top = 0.128
+anchor_right = 0.91700006
+anchor_bottom = 0.846
+offset_left = -0.034999847
+offset_top = 0.015999794
+offset_right = -140.49501
+offset_bottom = 0.012001038
+mouse_filter = 2
+texture = ExtResource("22")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="UI/BottomBar/RepairButton" unique_id=323755634]
+layout_mode = 0
+offset_left = 73.0
+offset_top = 12.0
+offset_right = 227.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.4, 0.2, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 19
+text = "Repair Wall"
+
+[node name="CostIcon" type="TextureRect" parent="UI/BottomBar/RepairButton" unique_id=1714446205]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 35.0
+offset_right = 94.0
+offset_bottom = 59.0
+mouse_filter = 2
+texture = ExtResource("15")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostLabel" type="Label" parent="UI/BottomBar/RepairButton" unique_id=2140978474]
+layout_mode = 0
+offset_left = 105.0
+offset_top = 34.0
+offset_right = 229.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0.4, 0.2, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="Item0" type="TextureButton" parent="UI/BottomBar" unique_id=90565078]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_top = 10.0
+offset_right = -198.0
+offset_bottom = 92.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Icon" type="TextureRect" parent="UI/BottomBar/Item0" unique_id=2081322531]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 70.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("18")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="TextureRect" parent="UI/BottomBar/Item0" unique_id=1678885287]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 56.0
+offset_right = 78.0
+offset_bottom = 78.0
+mouse_filter = 2
+texture = ExtResource("21")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="CountLabel" type="Label" parent="UI/BottomBar/Item0/Badge" unique_id=703076491]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 3.0
+offset_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0/5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Item1" type="TextureButton" parent="UI/BottomBar" unique_id=1771315004]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -188.0
+offset_top = 10.0
+offset_right = -106.0
+offset_bottom = 92.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Icon" type="TextureRect" parent="UI/BottomBar/Item1" unique_id=2087981263]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 70.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("19")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="TextureRect" parent="UI/BottomBar/Item1" unique_id=1527371921]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 56.0
+offset_right = 78.0
+offset_bottom = 78.0
+mouse_filter = 2
+texture = ExtResource("21")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="CountLabel" type="Label" parent="UI/BottomBar/Item1/Badge" unique_id=1323596833]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0/5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Item2" type="TextureButton" parent="UI/BottomBar" unique_id=37291561]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -96.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = 92.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Icon" type="TextureRect" parent="UI/BottomBar/Item2" unique_id=536197510]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 70.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("20")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="TextureRect" parent="UI/BottomBar/Item2" unique_id=1454307891]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 56.0
+offset_right = 78.0
+offset_bottom = 78.0
+mouse_filter = 2
+texture = ExtResource("21")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="CountLabel" type="Label" parent="UI/BottomBar/Item2/Badge" unique_id=1958517041]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 4.0
+offset_right = 2.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0/5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PausePanel" type="Control" parent="UI" unique_id=341284693]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="UI/PausePanel" unique_id=1647341679]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="TitleLabel" type="Label" parent="UI/PausePanel" unique_id=1794249599]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 210.0
+offset_right = 220.0
+offset_bottom = 258.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.1, 0.08, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 34
+text = "PAUSED GAME"
+horizontal_alignment = 1
+
+[node name="ToggleBar" type="TextureRect" parent="UI/PausePanel" unique_id=1889023190]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 288.0
+offset_right = 300.0
+offset_bottom = 376.0
+texture = ExtResource("5")
+expand_mode = 1
+
+[node name="Toggles" type="HBoxContainer" parent="UI/PausePanel/ToggleBar" unique_id=1235658116]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -125.0
+offset_top = 8.0
+offset_right = 125.0
+offset_bottom = 80.0
+theme_override_constants/separation = 18
+
+[node name="MusicToggle" type="TextureButton" parent="UI/PausePanel/ToggleBar/Toggles" unique_id=131778773]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 2
+texture_normal = ExtResource("6")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SoundToggle" type="TextureButton" parent="UI/PausePanel/ToggleBar/Toggles" unique_id=1260389928]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 2
+texture_normal = ExtResource("7")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="VibraToggle" type="TextureButton" parent="UI/PausePanel/ToggleBar/Toggles" unique_id=1618185401]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 2
+texture_normal = ExtResource("8")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="RestartButton" type="TextureButton" parent="UI/PausePanel" unique_id=1355774651]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -170.0
+offset_top = 420.0
+offset_right = -20.0
+offset_bottom = 474.0
+texture_normal = ExtResource("9")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="RestartLabel" type="Label" parent="UI/PausePanel/RestartButton" unique_id=161362127]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Restart"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResumeButton" type="TextureButton" parent="UI/PausePanel" unique_id=1233821880]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 20.0
+offset_top = 420.0
+offset_right = 170.0
+offset_bottom = 474.0
+texture_normal = ExtResource("10")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="ResumeLabel" type="Label" parent="UI/PausePanel/ResumeButton" unique_id=778617423]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Resume"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LosePanel" type="Control" parent="UI" unique_id=110352797]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="UI/LosePanel" unique_id=246817242]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="TextureRect" parent="UI/LosePanel" unique_id=1189759096]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -110.0
+offset_right = 280.0
+offset_bottom = 110.0
+texture = ExtResource("11")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RestartButton" type="TextureButton" parent="UI/LosePanel/Panel" unique_id=28376947]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_top = 150.0
+offset_right = -10.0
+offset_bottom = 200.0
+texture_normal = ExtResource("10")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="RestartLabel" type="Label" parent="UI/LosePanel/Panel/RestartButton" unique_id=182214578]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Restart"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HomeButton" type="TextureButton" parent="UI/LosePanel/Panel" unique_id=360203743]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 10.0
+offset_top = 150.0
+offset_right = 130.0
+offset_bottom = 200.0
+texture_normal = ExtResource("10")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="HomeLabel" type="Label" parent="UI/LosePanel/Panel/HomeButton" unique_id=688714005]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Home"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WinPanel" type="Control" parent="UI" unique_id=56060699]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="UI/WinPanel" unique_id=68992158]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="TextureRect" parent="UI/WinPanel" unique_id=546975747]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -130.0
+offset_right = 280.0
+offset_bottom = 130.0
+texture = ExtResource("12")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BonusBox" type="TextureRect" parent="UI/WinPanel/Panel" unique_id=1514457932]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -90.0
+offset_top = 120.0
+offset_right = 90.0
+offset_bottom = 170.0
+texture = ExtResource("13")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BonusLabel" type="Label" parent="UI/WinPanel/Panel/BonusBox" unique_id=1912701796]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "+150"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueButton" type="TextureButton" parent="UI/WinPanel/Panel" unique_id=870724500]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -70.0
+offset_top = 185.0
+offset_right = 70.0
+offset_bottom = 235.0
+texture_normal = ExtResource("10")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="ContinueLabel" type="Label" parent="UI/WinPanel/Panel/ContinueButton" unique_id=1148723001]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Continue"
+horizontal_alignment = 1
+vertical_alignment = 1

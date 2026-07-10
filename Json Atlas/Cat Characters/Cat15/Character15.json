@@ -1,0 +1,274 @@
+{
+"skeleton": {
+	"hash": "OD79yDsb+pc",
+	"spine": "4.3.00",
+	"x": -60.21899,
+	"y": 93.9503,
+	"width": 113.28552,
+	"height": 128.6936,
+	"images": "./Images/",
+	"audio": "./audio"
+},
+"bones": [
+	{ "name": "root" },
+	{ "name": "Allbones", "parent": "root", "x": 0.2431164, "y": 234.3846 },
+	{ "name": "Body", "parent": "Allbones", "length": 19.22384, "rotation": 88.4725, "x": 2.8185105, "y": -116.7124 },
+	{ "name": "Head", "parent": "Body", "length": 22.561077, "rotation": -0.4249704, "x": 27.796173, "y": 5.423866 },
+	{ "name": "Gun", "parent": "Body", "length": 14.607194, "rotation": -87.46745, "x": 14.74295, "y": 17.38058 },
+	{ "name": "Tails", "parent": "Body", "length": 14.24077, "rotation": 116.64738, "x": 6.757316, "y": 14.305222 },
+	{ "name": "Shade", "parent": "Allbones", "y": -125.8074 }
+],
+"slots": [
+	{ "name": "Shade", "bone": "Shade", "attachment": "Shade" },
+	{ "name": "Tails", "bone": "Tails", "attachment": "Tails" },
+	{ "name": "Body", "bone": "Body", "attachment": "Body" },
+	{ "name": "Head", "bone": "Head", "attachment": "Head" },
+	{ "name": "Gun", "bone": "Gun", "attachment": "Gun" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"Body": {
+				"Body": { "x": 18.434784, "y": 2.1562965, "rotation": -88.4725, "width": 62, "height": 68 }
+			},
+			"Gun": {
+				"Gun": { "x": 23.00458, "y": 0.8396454, "rotation": -1.0050507, "width": 88, "height": 41 }
+			},
+			"Head": {
+				"Head": { "x": 32.38226, "y": 5.205929, "rotation": -88.04752, "width": 109, "height": 89 }
+			},
+			"Shade": {
+				"Shade": { "x": 0.4785443, "y": -0.12688446, "width": 72, "height": 29 }
+			},
+			"Tails": {
+				"Tails": { "x": 19.36566, "y": -2.823959, "rotation": 156.9188, "width": 56, "height": 35 }
+			}
+		}
+	}
+],
+"animations": {
+	"Idle": {
+		"bones": {
+			"Allbones": {
+				"rotate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			},
+			"Body": {
+				"rotate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.3333333, "x": 0.921712 },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			},
+			"Gun": {
+				"rotate": [
+					{},
+					{ "time": 0.3333333, "value": -13.14164 },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			},
+			"Head": {
+				"rotate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			},
+			"Shade": {
+				"rotate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.3333333, "x": 1.1462704, "y": 1.1462704 },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			},
+			"Tails": {
+				"rotate": [
+					{},
+					{ "time": 0.3333333, "value": -20.91659 },
+					{ "time": 0.6666667 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.3333333, "x": 0.8018422, "y": 0.7712051 },
+					{ "time": 0.6666667 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.6666667 }
+				]
+			}
+		}
+	},
+	"Shoot": {
+		"bones": {
+			"Body": {
+				"rotate": [
+					{},
+					{ "time": 0.1, "value": 8.16694 },
+					{ "time": 0.3333333 }
+				],
+				"translate": [
+					{},
+					{ "time": 0.1, "y": 4.558021 },
+					{ "time": 0.3333333 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.1, "x": 0.936917 },
+					{ "time": 0.3333333 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				]
+			},
+			"Gun": {
+				"rotate": [
+					{},
+					{ "time": 0.1, "value": -7.510742 },
+					{ "time": 0.3333333 }
+				],
+				"translate": [
+					{},
+					{ "time": 0.1, "y": 5.723818 },
+					{ "time": 0.3333333 }
+				],
+				"scale": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				]
+			},
+			"Head": {
+				"rotate": [
+					{},
+					{ "time": 0.1, "value": -12.132722 },
+					{ "time": 0.3333333 }
+				],
+				"translate": [
+					{},
+					{ "time": 0.1, "x": -3.4670715, "y": 4.380539 },
+					{ "time": 0.3333333 }
+				],
+				"scale": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				]
+			},
+			"Shade": {
+				"rotate": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.1, "x": 0.7871417, "y": 0.7871417 },
+					{ "time": 0.3333333 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				]
+			},
+			"Tails": {
+				"rotate": [
+					{},
+					{ "time": 0.1, "value": -23.309845 },
+					{ "time": 0.3333333 }
+				],
+				"translate": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				],
+				"scale": [
+					{},
+					{ "time": 0.1, "x": 0.9619325 },
+					{ "time": 0.23333333, "x": 1.1337473 },
+					{ "time": 0.3333333 }
+				],
+				"shear": [
+					{ "curve": "stepped" },
+					{ "time": 0.3333333 }
+				]
+			}
+		}
+	}
+}
+}

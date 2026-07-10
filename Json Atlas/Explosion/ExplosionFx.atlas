@@ -1,0 +1,16 @@
+ExplosionFx.png
+size:1024,512
+filter:Linear,Linear
+pma:true
+Box
+bounds:2,2,788,504
+Fx
+bounds:792,362,161,144
+offsets:5,4,168,154
+Light
+bounds:792,223,158,137
+offsets:6,8,168,154
+Star
+bounds:792,82,139,133
+offsets:15,6,168,154
+rotate:90
