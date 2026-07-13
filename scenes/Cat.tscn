@@ -5,5 +5,11 @@
 [node name="Cat" type="Node2D"]
 script = ExtResource("1")
 
+[node name="TierAura" type="Sprite2D" parent="."]
+position = Vector2(0, 42)
+scale = Vector2(0.4, 0.15)
+z_index = 0
+
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+z_index = 1
 scale = Vector2(0.75, 0.75)

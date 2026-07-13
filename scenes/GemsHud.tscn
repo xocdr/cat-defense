@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://brmfjg24p6tg"]
+
+[ext_resource type="Script" uid="uid://b83i2ldvk5agq" path="res://scripts/gems_hud.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cspbh3tayked4" path="res://Png/Ui/GemsBarBg.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://b1bock374frfk" path="res://Png/Ui/GemsIcon.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://bm0pxs5tcf1sr" path="res://Png/Ui/BtnGreenAdd.png" id="4"]
+
+[node name="GemsHud" type="TextureRect" unique_id=1871409832]
+anchors_preset = -1
+anchor_left = 0.235
+anchor_top = 0.03
+anchor_right = 0.235
+anchor_bottom = 0.03
+offset_right = 200.0
+offset_bottom = 46.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 1
+script = ExtResource("1")
+
+[node name="GemsIcon" type="TextureRect" parent="." unique_id=881059234]
+layout_mode = 0
+offset_left = 9.200012
+offset_top = 10.4
+offset_right = 41.200012
+offset_bottom = 42.4
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GemsLabel" type="Label" parent="." unique_id=172568492]
+layout_mode = 0
+offset_left = 39.200012
+offset_top = 9.4
+offset_right = 145.20001
+offset_bottom = 45.4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "99999"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AddButton" type="TextureButton" parent="." unique_id=1129550428]
+layout_mode = 0
+offset_left = 150.20001
+offset_top = 11.4
+offset_right = 190.20001
+offset_bottom = 45.4
+texture_normal = ExtResource("4")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="AddButton" unique_id=143300089]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = 34.0
+offset_bottom = 27.0
+text = "+"
+horizontal_alignment = 1

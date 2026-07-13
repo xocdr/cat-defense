@@ -1,0 +1,282 @@
+[gd_scene format=3 uid="uid://bhqqj8f6h5aeo"]
+
+[ext_resource type="Script" uid="uid://t35wr1itj1ag" path="res://scripts/extra_panel.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://clg70qdmguhw5" path="res://Png/Ui/TitleRibbon.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://p6frxaolud1h" path="res://Png/Ui/AddonScreen.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://c60ugd5cwdom0" path="res://Png/Ui/AddonBoxGrey.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://bfff00ujm61qo" path="res://Png/Ui/AddonIcon6.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://dtb12cy7sky82" path="res://Png/Ui/AddonIcon8.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://d2g7x1knukkqp" path="res://Png/Ui/AddonIcon7.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://cd6v7efpb6eyt" path="res://Png/Ui/5Bar.png" id="8"]
+[ext_resource type="PackedScene" uid="uid://brmfjg24p6tg" path="res://scenes/GemsHud.tscn" id="9"]
+[ext_resource type="Texture2D" uid="uid://beawbtby8ga1x" path="res://Png/Ui/AddonBtnyellow.png" id="11"]
+
+[node name="ExtraPanel" type="Control" unique_id=1255480302]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1395498345]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=899341488]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="GemsHud" parent="." unique_id=1282229024 instance=ExtResource("9")]
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.6
+anchor_top = 0.0
+anchor_right = 0.6
+anchor_bottom = 0.0
+offset_left = -481.0
+offset_top = 30.0
+offset_right = -281.0
+offset_bottom = 76.0
+
+[node name="TitleRibbon" type="TextureRect" parent="." unique_id=304835438]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.1
+anchor_right = 0.5
+anchor_bottom = 0.1
+offset_left = -41.0
+offset_top = -18.0
+offset_right = 239.0
+offset_bottom = 52.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="TitleRibbon" unique_id=103993372]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 54.0
+offset_top = 5.0
+offset_right = -52.0
+offset_bottom = -22.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Extra"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Item1" type="TextureRect" parent="." unique_id=1467262180]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.4
+anchor_top = 0.26
+anchor_right = 0.4
+anchor_bottom = 0.26
+offset_left = 136.0
+offset_top = 42.0
+offset_right = 476.0
+offset_bottom = 138.00002
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Icon" type="TextureRect" parent="Item1" unique_id=1995111516]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 26.800003
+offset_right = 70.0
+offset_bottom = 82.8
+texture = ExtResource("5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Item1" unique_id=2083762004]
+layout_mode = 0
+offset_left = 85.0
+offset_top = 16.800003
+offset_right = 235.0
+offset_bottom = 42.800003
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Spikes"
+
+[node name="PipBar" type="TextureRect" parent="Item1" unique_id=1235479272]
+layout_mode = 0
+offset_left = 78.0
+offset_top = 48.799988
+offset_right = 148.0
+offset_bottom = 76.79999
+texture = ExtResource("8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostButton" type="TextureButton" parent="Item1" unique_id=2133418043]
+layout_mode = 0
+offset_left = 246.0
+offset_top = 27.800003
+offset_right = 302.0
+offset_bottom = 67.8
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 25
+
+[node name="CountLabel" type="Label" parent="Item1" unique_id=229184931]
+layout_mode = 0
+offset_left = 251.0
+offset_top = 70.79999
+offset_right = 297.0
+offset_bottom = 94.79999
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 / 5"
+horizontal_alignment = 1
+
+[node name="Item2" type="TextureRect" parent="." unique_id=1811979015]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.4
+anchor_top = 0.42
+anchor_right = 0.4
+anchor_bottom = 0.42
+offset_left = 136.0
+offset_top = 41.99997
+offset_right = 476.0
+offset_bottom = 137.99997
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Icon" type="TextureRect" parent="Item2" unique_id=1211345976]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 26.600037
+offset_right = 80.0
+offset_bottom = 82.60004
+texture = ExtResource("6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Item2" unique_id=1964983899]
+layout_mode = 0
+offset_left = 92.0
+offset_top = 25.600037
+offset_right = 242.0
+offset_bottom = 51.600037
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "TNT"
+
+[node name="PipBar" type="TextureRect" parent="Item2" unique_id=596018744]
+layout_mode = 0
+offset_left = 43.0
+offset_top = 51.600037
+offset_right = 193.0
+offset_bottom = 79.60004
+texture = ExtResource("8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostButton" type="TextureButton" parent="Item2" unique_id=568949068]
+layout_mode = 0
+offset_left = 246.0
+offset_top = 27.600037
+offset_right = 302.0
+offset_bottom = 67.60004
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 25
+
+[node name="CountLabel" type="Label" parent="Item2" unique_id=1041974016]
+layout_mode = 0
+offset_left = 250.0
+offset_top = 71.60004
+offset_right = 294.0
+offset_bottom = 95.60004
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 / 5"
+horizontal_alignment = 1
+
+[node name="Item3" type="TextureRect" parent="." unique_id=1805448589]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.4
+anchor_top = 0.58
+anchor_right = 0.4
+anchor_bottom = 0.58
+offset_left = 136.0
+offset_top = 42.0
+offset_right = 476.0
+offset_bottom = 138.0
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Icon" type="TextureRect" parent="Item3" unique_id=994537920]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 28.400024
+offset_right = 80.0
+offset_bottom = 84.400024
+texture = ExtResource("7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Item3" unique_id=719109864]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 24.400024
+offset_right = 238.0
+offset_bottom = 50.400024
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Boxing Cat"
+
+[node name="PipBar" type="TextureRect" parent="Item3" unique_id=1158794175]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 48.400024
+offset_right = 148.0
+offset_bottom = 76.400024
+texture = ExtResource("8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostButton" type="TextureButton" parent="Item3" unique_id=822273407]
+layout_mode = 0
+offset_left = 248.0
+offset_top = 30.400024
+offset_right = 304.0
+offset_bottom = 70.400024
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 25
+
+[node name="CountLabel" type="Label" parent="Item3" unique_id=539650133]
+layout_mode = 0
+offset_left = 255.0
+offset_top = 71.400024
+offset_right = 292.0
+offset_bottom = 95.400024
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 / 5"
+horizontal_alignment = 1

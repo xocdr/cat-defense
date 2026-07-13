@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://c0qjycwwm32up"]
+
+[ext_resource type="Script" uid="uid://13agcuj83nan" path="res://scripts/upgrades_panel.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://clg70qdmguhw5" path="res://Png/Ui/TitleRibbon.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://bb3d71uiy2h10" path="res://Png/Ui/CatUpgradeScreen.png" id="3"]
+[ext_resource type="PackedScene" uid="uid://brmfjg24p6tg" path="res://scenes/GemsHud.tscn" id="4"]
+
+[node name="UpgradesPanel" type="Control" unique_id=1178006209]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="." unique_id=315100536]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=1341618204]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="GemsHud" parent="." unique_id=1553022555 instance=ExtResource("4")]
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.6
+anchor_top = 0.0
+anchor_right = 0.6
+anchor_bottom = 0.0
+offset_left = -481.0
+offset_top = 30.0
+offset_right = -281.0
+offset_bottom = 76.0
+
+[node name="TitleRibbon" type="TextureRect" parent="." unique_id=717060412]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.1
+anchor_right = 0.5
+anchor_bottom = 0.1
+offset_left = -41.0
+offset_top = -18.0
+offset_right = 239.0
+offset_bottom = 52.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="TitleRibbon" unique_id=717764845]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 54.0
+offset_top = 4.0
+offset_right = -52.0
+offset_bottom = -23.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Upgrades"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UpgradeScroll" type="ScrollContainer" parent="." unique_id=1737302482]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.223
+anchor_top = 0.25
+anchor_right = 0.919
+anchor_bottom = 0.87100005
+offset_left = 0.55999756
+offset_top = 15.0
+offset_right = -0.32006836
+offset_bottom = -12.120056
+horizontal_scroll_mode = 0
+
+[node name="UpgradeGrid" type="GridContainer" parent="UpgradeScroll" unique_id=1637037002]
+layout_mode = 2
+theme_override_constants/h_separation = 22
+theme_override_constants/v_separation = 16
+columns = 3

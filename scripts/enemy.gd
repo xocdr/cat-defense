@@ -20,8 +20,8 @@ const ATTACK_INTERVAL := 1.0
 const WALL_STOP_X := 452.0
 const BLOCKER_STOP_DISTANCE := 62.0
 const LOSE_X := 70.0
-const REG_SCALE := 0.55
-const BOSS_SCALE := 0.75
+const REG_SCALE := 0.65
+const BOSS_SCALE := 0.85
 
 var wall: Wall = null            # assigned by main before add_child
 var hp: int

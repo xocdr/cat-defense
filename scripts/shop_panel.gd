@@ -5,6 +5,7 @@ extends Control
 ## IAP/ad-reward plugin when one is added, keeping this signal contract.
 
 signal item_purchased(gems: int)
+signal navigate_to_shop
 
 const PRICE_BUTTON_PATHS := [
 	"Panel/DealsRow/BestDeals/PriceButton",
@@ -17,13 +18,16 @@ const PRICE_BUTTON_PATHS := [
 ]
 
 func _ready() -> void:
-	visible = false
 	for path in PRICE_BUTTON_PATHS:
 		var button: BaseButton = get_node(path)
 		button.pressed.connect(_on_item_pressed.bind(button))
+	$GemsHud.add_pressed.connect(_on_gems_add_pressed)
 
-func open() -> void:
-	visible = true
+func refresh() -> void:
+	$GemsHud.refresh()
+
+func _on_gems_add_pressed() -> void:
+	navigate_to_shop.emit()
 
 func _on_item_pressed(button: BaseButton) -> void:
 	var gems: int = button.get_meta("gems", 0)

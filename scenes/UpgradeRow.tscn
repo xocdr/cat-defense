@@ -1,0 +1,131 @@
+[gd_scene format=3 uid="uid://di2jmy7q3uvhp"]
+
+[ext_resource type="Script" uid="uid://8e28xvajnalg" path="res://scripts/upgrade_row.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://c60ugd5cwdom0" path="res://Png/Ui/AddonBoxGrey.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://bon7xm2jbls75" path="res://Png/Ui/LockedCatBox.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://beawbtby8ga1x" path="res://Png/Ui/AddonBtnyellow.png" id="4"]
+
+[node name="UpgradeRow" type="Control" unique_id=1112301254]
+custom_minimum_size = Vector2(268, 96)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1")
+
+[node name="BgLocked" type="TextureRect" parent="." unique_id=480034988]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 2.0
+offset_right = 268.0
+offset_bottom = 96.0
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="BgUnlocked" type="TextureRect" parent="." unique_id=901272619]
+layout_mode = 0
+offset_left = -4.0
+offset_top = -7.0
+offset_right = 268.0
+offset_bottom = 96.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Aura" type="TextureRect" parent="." unique_id=1564399581]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 1.0
+offset_right = 94.0
+offset_bottom = 84.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Portrait" type="TextureRect" parent="." unique_id=1564399580]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 10.0
+offset_right = 85.0
+offset_bottom = 75.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="." unique_id=1510282699]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 12.0
+offset_right = 264.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Test"
+horizontal_alignment = 1
+
+[node name="PipBar" type="TextureRect" parent="." unique_id=781495076]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 32.0
+offset_right = 200.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardsLabel" type="Label" parent="." unique_id=1272890772]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 76.0
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="CostLabel" type="Label" parent="." unique_id=1272890771]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 78.0
+offset_right = 200.0
+offset_bottom = 94.0
+theme_override_colors/font_color = Color(0.55, 1, 0.45, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="BuyButton" type="TextureButton" parent="." unique_id=1120052792]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.79
+anchor_top = 0.35900003
+anchor_right = 0.97800004
+anchor_bottom = 0.795
+offset_left = -5.720001
+offset_top = -0.002002716
+offset_right = -0.104003906
+offset_bottom = -0.010002136
+texture_normal = ExtResource("4")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="BuyButton" unique_id=1104662303]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 4.0
+offset_right = 51.0
+offset_bottom = 31.0
+text = "BUY"
+horizontal_alignment = 1
+
+[node name="TierLabel" type="Label" parent="." unique_id=1564399582]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -6.0
+offset_right = 100.0
+offset_bottom = 10.0
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 0
+
+[node name="ClickOverlay" type="ColorRect" parent="." unique_id=668586609]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 11.0
+offset_right = 270.0
+offset_bottom = 96.0
+color = Color(1, 1, 1, 0)

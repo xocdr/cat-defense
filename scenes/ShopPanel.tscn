@@ -1,0 +1,537 @@
+[gd_scene format=3 uid="uid://bn11nbtlchm3i"]
+
+[ext_resource type="Script" uid="uid://dqg7d7dfm028n" path="res://scripts/shop_panel.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cqpj6ndfasnsw" path="res://Png/Ui/LevelMap_Bg_Screen.png" id="2_tgvys"]
+[ext_resource type="Texture2D" uid="uid://clg70qdmguhw5" path="res://Png/Ui/TitleRibbon.png" id="3"]
+[ext_resource type="PackedScene" uid="uid://brmfjg24p6tg" path="res://scenes/GemsHud.tscn" id="4"]
+[ext_resource type="Texture2D" uid="uid://bgbrg0tg8cday" path="res://Png/Ui/ShopIcon7.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://cnd3osipjuiyh" path="res://Png/Ui/ShopIcon2.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://bcbcb5vl3vqx4" path="res://Png/Ui/ShopIcon3.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://cd22r2h2v0t0c" path="res://Png/Ui/ShopIcon4.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://cxwwxxhatsl6q" path="res://Png/Ui/ShopIcon5.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://dqal8rguqd3fl" path="res://Png/Ui/ShopIcon6.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://ba8slbbpb7vow" path="res://Png/Ui/BtnShopYellow.png" id="17"]
+
+[node name="ShopPanel" type="Control" unique_id=1619132699]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1802338949]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_tgvys")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=712851439]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="GemsHud" parent="." unique_id=1793271030 instance=ExtResource("4")]
+layout_mode = 1
+anchor_left = 0.6
+anchor_top = 0.0
+anchor_right = 0.6
+anchor_bottom = 0.0
+offset_left = -481.0
+offset_top = 30.0
+offset_right = -281.0
+offset_bottom = 76.0
+
+[node name="TitleRibbon" type="TextureRect" parent="." unique_id=1859249862]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -15.400024
+offset_top = 75.8
+offset_right = 204.59998
+offset_bottom = 145.8
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="TitleRibbon" unique_id=590486266]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -14.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Shop"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Panel" type="Control" parent="." unique_id=371682114]
+layout_mode = 1
+anchor_left = 0.3
+anchor_top = 0.14
+anchor_right = 0.965
+anchor_bottom = 0.93
+offset_left = -71.0
+offset_top = -20.800003
+offset_right = -71.0
+offset_bottom = -89.0
+
+[node name="DealsRow" type="HBoxContainer" parent="Panel" unique_id=666120275]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -277.59998
+offset_top = 140.2
+offset_right = 270.0
+offset_bottom = 259.0
+grow_horizontal = 2
+theme_override_constants/separation = 20
+
+[node name="BestDeals" type="TextureRect" parent="Panel/DealsRow" unique_id=26886748]
+custom_minimum_size = Vector2(260, 100)
+layout_mode = 2
+offset_transform_enabled = true
+texture = ExtResource("17")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="Panel/DealsRow/BestDeals" unique_id=1390950655]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 25.0
+offset_right = 94.0
+offset_bottom = 84.0
+texture = ExtResource("7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="Panel/DealsRow/BestDeals" unique_id=2030713682]
+layout_mode = 0
+offset_left = 90.0
+offset_top = 23.0
+offset_right = 184.0
+offset_bottom = 46.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Best Deals!"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/DealsRow/BestDeals" unique_id=1941184947]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 43.0
+offset_right = 189.0
+offset_bottom = 71.0
+theme_override_colors/font_color = Color(0.49788618, 0.43777388, 5.7756904e-07, 1)
+theme_override_font_sizes/font_size = 15
+text = "2600 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/DealsRow/BestDeals" unique_id=1340720459]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 66.0
+offset_right = 186.0
+offset_bottom = 95.79999
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 2600
+
+[node name="PriceLabel" type="Label" parent="Panel/DealsRow/BestDeals/PriceButton" unique_id=1638787965]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 15
+text = "$14.99"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SuperPackage" type="TextureRect" parent="Panel/DealsRow" unique_id=2090614196]
+custom_minimum_size = Vector2(260, 100)
+layout_mode = 2
+texture = ExtResource("17")
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="Panel/DealsRow/SuperPackage" unique_id=1655832440]
+layout_mode = 0
+offset_left = 19.0
+offset_top = 30.0
+offset_right = 79.0
+offset_bottom = 90.0
+texture = ExtResource("7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="Panel/DealsRow/SuperPackage" unique_id=1801762489]
+layout_mode = 0
+offset_left = 78.0
+offset_top = 21.0
+offset_right = 204.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Super Package"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/DealsRow/SuperPackage" unique_id=1909474753]
+layout_mode = 0
+offset_left = 82.0
+offset_top = 39.800003
+offset_right = 188.0
+offset_bottom = 67.8
+offset_transform_enabled = true
+theme_override_colors/font_color = Color(0.49803922, 0.4392157, 0, 1)
+theme_override_font_sizes/font_size = 15
+text = "5000 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/DealsRow/SuperPackage" unique_id=710655066]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 62.0
+offset_right = 190.0
+offset_bottom = 92.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 5000
+
+[node name="PriceLabel" type="Label" parent="Panel/DealsRow/SuperPackage/PriceButton" unique_id=15295840]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 15
+text = "$17.99"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PacksRow" type="HBoxContainer" parent="Panel" unique_id=853810479]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -397.59998
+offset_top = 291.0
+offset_right = 400.0
+offset_bottom = 484.2
+grow_horizontal = 2
+theme_override_constants/separation = 20
+
+[node name="Pack1" type="ColorRect" parent="Panel/PacksRow" unique_id=1553537085]
+custom_minimum_size = Vector2(140, 150)
+layout_mode = 2
+color = Color(0.9, 0.6, 0.2, 1)
+
+[node name="Icon" type="TextureRect" parent="Panel/PacksRow/Pack1" unique_id=1385109672]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -35.0
+offset_top = 15.0
+offset_right = 35.0
+offset_bottom = 85.0
+texture = ExtResource("9")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel/PacksRow/Pack1" unique_id=880024197]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 6.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Watch Ads"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/PacksRow/Pack1" unique_id=1261442271]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "20 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/PacksRow/Pack1" unique_id=1629748531]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 112.0
+offset_right = 45.0
+offset_bottom = 142.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 20
+
+[node name="PriceLabel" type="Label" parent="Panel/PacksRow/Pack1/PriceButton" unique_id=1985906051]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "Free"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Pack2" type="ColorRect" parent="Panel/PacksRow" unique_id=1145902066]
+custom_minimum_size = Vector2(140, 150)
+layout_mode = 2
+color = Color(0.3, 0.7, 0.4, 1)
+
+[node name="Icon" type="TextureRect" parent="Panel/PacksRow/Pack2" unique_id=1599998830]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -35.0
+offset_top = 15.0
+offset_right = 35.0
+offset_bottom = 85.0
+texture = ExtResource("10")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel/PacksRow/Pack2" unique_id=1785954853]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 6.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Starter Pack"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/PacksRow/Pack2" unique_id=1831857099]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "125 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/PacksRow/Pack2" unique_id=1343709290]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 112.0
+offset_right = 45.0
+offset_bottom = 142.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 125
+
+[node name="PriceLabel" type="Label" parent="Panel/PacksRow/Pack2/PriceButton" unique_id=513093901]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "$4.99"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Pack3" type="ColorRect" parent="Panel/PacksRow" unique_id=125371510]
+custom_minimum_size = Vector2(140, 150)
+layout_mode = 2
+color = Color(0.9, 0.6, 0.2, 1)
+
+[node name="Icon" type="TextureRect" parent="Panel/PacksRow/Pack3" unique_id=2114948353]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -35.0
+offset_top = 15.0
+offset_right = 35.0
+offset_bottom = 85.0
+texture = ExtResource("11")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel/PacksRow/Pack3" unique_id=112649274]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 6.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Starter Pack"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/PacksRow/Pack3" unique_id=1192488357]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "300 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/PacksRow/Pack3" unique_id=353092506]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 112.0
+offset_right = 45.0
+offset_bottom = 142.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 300
+
+[node name="PriceLabel" type="Label" parent="Panel/PacksRow/Pack3/PriceButton" unique_id=516979789]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "$7.99"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Pack4" type="ColorRect" parent="Panel/PacksRow" unique_id=402540384]
+custom_minimum_size = Vector2(140, 150)
+layout_mode = 2
+color = Color(0.3, 0.7, 0.4, 1)
+
+[node name="Icon" type="TextureRect" parent="Panel/PacksRow/Pack4" unique_id=730847285]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -35.0
+offset_top = 15.0
+offset_right = 35.0
+offset_bottom = 85.0
+grow_horizontal = 2
+texture = ExtResource("12")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel/PacksRow/Pack4" unique_id=974640879]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 6.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Starter Pack"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/PacksRow/Pack4" unique_id=1993556941]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "650 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/PacksRow/Pack4" unique_id=1589888429]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 112.0
+offset_right = 45.0
+offset_bottom = 142.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 650
+
+[node name="PriceLabel" type="Label" parent="Panel/PacksRow/Pack4/PriceButton" unique_id=1693096292]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "$9.99"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Pack5" type="ColorRect" parent="Panel/PacksRow" unique_id=2065076796]
+custom_minimum_size = Vector2(140, 150)
+layout_mode = 2
+color = Color(0.9, 0.6, 0.2, 1)
+
+[node name="Icon" type="TextureRect" parent="Panel/PacksRow/Pack5" unique_id=144501932]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -35.0
+offset_top = 15.0
+offset_right = 35.0
+offset_bottom = 85.0
+texture = ExtResource("13")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel/PacksRow/Pack5" unique_id=1013329102]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 6.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Starter Pack"
+horizontal_alignment = 1
+
+[node name="GemsLabel" type="Label" parent="Panel/PacksRow/Pack5" unique_id=1765181037]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "1000 Gems"
+horizontal_alignment = 1
+
+[node name="PriceButton" type="TextureButton" parent="Panel/PacksRow/Pack5" unique_id=1624024930]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 112.0
+offset_right = 45.0
+offset_bottom = 142.0
+texture_normal = ExtResource("17")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 1000
+
+[node name="PriceLabel" type="Label" parent="Panel/PacksRow/Pack5/PriceButton" unique_id=856627228]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2, 0.15, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "$11.99"
+horizontal_alignment = 1
+vertical_alignment = 1
