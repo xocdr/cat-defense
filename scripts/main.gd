@@ -19,13 +19,14 @@ const ROW_Y := [199.8, 276.5, 354.2, 431.6, 508.5]
 const AREA_BOARD_CONFIG := {
 	1: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(62.2, 644.1), "trash_row": -1, "trash_col": -1},
 	2: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(242.2, 603.4), "trash_row": -1, "trash_col": -1},
-	3: {"cols": [163.0, 246.0], "trash_pos": Vector2(66.4, 73.9), "trash_row": -1, "trash_col": -1},
+	3: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(66.4, 73.9), "trash_row": -1, "trash_col": -1},
 	4: {"cols": [163.0, 246.0], "trash_pos": Vector2(163.0, 508.5), "trash_row": 4, "trash_col": 0},
 	5: {"cols": [163.0, 246.0], "trash_pos": Vector2(163.0, 508.5), "trash_row": 4, "trash_col": 0},
 }
 
 const WAVE_SFX_PATH := "res://sfx/evil-cat-laugh.mp3"
 const MERGE_SFX_PATH := "res://sfx/lvlup-cat-meow.mp3"
+const DEMON_GOD_SFX_PATH := "res://sfx/evil-cat-laugh.mp3"
 const PLACE_SFX_PATH := "res://sfx/cat-placed.mp3"
 const WAVE_COMPLETE_SFX_PATH := "res://sfx/wave complete.mp3"
 const LEVEL_COMPLETE_SFX_PATH := "res://sfx/level-complete.mp3"
@@ -38,7 +39,7 @@ const TEX_VIBRA_ON := preload("res://Png/Ui/BtnVibra.png")
 const TEX_VIBRA_OFF := preload("res://Png/Ui/BtnVibra Off.png")
 const WIN_WAVE := 10
 const SUMMON_COST := 30
-const START_COINS := 150
+const START_COINS := 30
 const DRAG_PICK_RADIUS := 55.0
 const ITEM_MIN_X := 470.0
 const ITEM_MAX_X := 1230.0
@@ -86,6 +87,7 @@ var _place_sfx_player: AudioStreamPlayer
 var _wave_complete_sfx_player: AudioStreamPlayer
 var _level_complete_sfx_player: AudioStreamPlayer
 var _drop_sfx_player: AudioStreamPlayer
+var _demon_god_sfx_player: AudioStreamPlayer
 
 @onready var background: Sprite2D = $Background
 @onready var wall: Wall = $Wall
@@ -143,6 +145,10 @@ func _ready() -> void:
 	_place_sfx_player.stream = load(PLACE_SFX_PATH)
 	add_child(_place_sfx_player)
 
+	_demon_god_sfx_player = AudioStreamPlayer.new()
+	_demon_god_sfx_player.stream = load(DEMON_GOD_SFX_PATH)
+	add_child(_demon_god_sfx_player)
+
 	_wave_complete_sfx_player = AudioStreamPlayer.new()
 	_wave_complete_sfx_player.stream = load(WAVE_COMPLETE_SFX_PATH)
 	add_child(_wave_complete_sfx_player)
@@ -161,7 +167,7 @@ func _ready() -> void:
 func _setup_level() -> void:
 	area_index = (level_num - 1) % 5 + 1
 	background.texture = load("res://Png/Area/Area%d.png" % area_index)
-	coins = START_COINS + 90 * (level_num - 1)
+	coins = START_COINS
 	wall.set_max_hp(300 + 150 * (level_num - 1))
 	wall.setup_broken_overlay(background.texture)
 	wall.hp_changed.connect(func(_hp, _max): _refresh_hud())
@@ -207,7 +213,7 @@ func _spawn_slots() -> void:
 
 const MAX_BOARD_SLOTS := 15  # Area 1/2's 3-col layout — the capacity wave difficulty is tuned around
 
-## Areas 3/4/5 hold only 9-10 board slots vs. Area 1/2's 15 (see
+## Areas 4/5 hold only 9-10 board slots vs. Area 1/2/3's 15 (see
 ## AREA_BOARD_CONFIG), purely an artifact of which background art a level
 ## reuses. Enemy HP scaling is tuned against the 15-slot baseline, so it's
 ## scaled down proportionally on smaller boards — otherwise those levels get
@@ -247,7 +253,7 @@ func summon_character() -> int:
 	# character match, not just a tier match, so the roll is weighted toward
 	# characters already on the board (a "pity" pull) — otherwise smaller
 	# boards (fewer slots to simultaneously hold candidate duplicates, e.g.
-	# the 9/10-slot Area 3/4/5 layouts vs. Area 1/2's 15) suffer far worse
+	# the 9/10-slot Area 4/5 layouts vs. Area 1/2/3's 15) suffer far worse
 	# merge odds than bigger boards for purely layout reasons.
 	var lo := Rarity.first_character_for_tier(Rarity.Tier.COMMON)
 	var hi := Rarity.last_character_for_tier(Rarity.Tier.COMMON)
@@ -427,17 +433,163 @@ func _merge_cats(dragged: Cat, kept: Cat) -> void:
 		_merge_sfx_player.play()
 	var current_tier := Rarity.tier_for_character(kept.character)
 	var new_character := kept.character
-	if current_tier < Rarity.Tier.DEMON_GOD:
+	var is_tier_up := current_tier < Rarity.Tier.DEMON_GOD
+	if is_tier_up:
 		var next_tier: Rarity.Tier = current_tier + 1
 		new_character = randi_range(Rarity.first_character_for_tier(next_tier), Rarity.last_character_for_tier(next_tier))
 	kept.set_character(new_character)
 	_record_character(new_character)
+	var new_tier := Rarity.tier_for_character(new_character)
 	Fx.explosion(world, kept.position, 0.12)
-	FloatText.spawn(world, kept.position + Vector2(0, -30), "%s!" % Rarity.name_for_tier(Rarity.tier_for_character(new_character)), Color(0.6, 1, 0.4), 20)
+	_spawn_merge_fx(kept.position, new_tier)
+	Fx.flash_hit(kept)
+	FloatText.spawn(world, kept.position + Vector2(0, -30), "%s!" % Rarity.name_for_tier(new_tier), Color(0.6, 1, 0.4), 20)
 	var tw := kept.create_tween()
 	kept.scale = Vector2(1.3, 1.3)
 	tw.tween_property(kept, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if new_tier == Rarity.Tier.DEMON_GOD:
+		if is_tier_up:
+			kept.set_ascension(0)
+		else:
+			kept.set_ascension(kept.ascension + 1)
+		_spawn_demon_god_promotion_fx(kept, kept.ascension)
 	_refresh_hud()
+
+const DEMON_GOD_TITLES := [
+	"DEMON GOD AWAKENED!", "DEMON GOD ASCENSION I!", "DEMON GOD ASCENSION II!",
+	"DEMON GOD ASCENSION III!", "TRUE DEMON GOD!",
+]
+
+## Extra-dramatic one-shot for a Demon God merge: screen shake + golden
+## screen flash + layered explosion bursts + an evil-laugh sting + a punchy
+## title card, stacked on top of the regular tier merge FX above. Scales up
+## with the cat's ascension stage (0..Cat.MAX_ASCENSION) so the very first
+## promotion is a modest jolt and each further merge into an already-maxed
+## Demon God reads as a bigger, more "powered up" moment than the last.
+func _spawn_demon_god_promotion_fx(cat: Cat, ascension: int) -> void:
+	var t: float = float(ascension) / float(Cat.MAX_ASCENSION)
+	if GameState.sound_on:
+		_demon_god_sfx_player.pitch_scale = 1.0 + 0.1 * ascension
+		_demon_god_sfx_player.play()
+	_shake_screen(lerpf(0.4, 0.7, t), lerpf(10.0, 34.0, t))
+	var flash_color := Color(1.0, 0.85, 0.2).lerp(Color(1.0, 0.35, 0.1), t)
+	_flash_screen(flash_color, lerpf(0.5, 0.85, t))
+	var pos := cat.position
+	var burst_count := 3 + ascension
+	var tw := cat.create_tween()
+	for i in range(burst_count):
+		var jitter := Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0)) * (1.0 + 0.2 * t)
+		var fx_scale: float = maxf(0.16, (0.34 + 0.14 * t) - i * 0.04)
+		tw.tween_callback(func(): Fx.explosion(world, pos + jitter, fx_scale))
+		tw.tween_interval(0.13)
+	var title_color := Color(1.0, 0.82, 0.15).lerp(Color(1.0, 0.3, 0.05), t)
+	_spawn_demon_god_title_card(DEMON_GOD_TITLES[ascension], title_color)
+
+## Camera-less screen shake: jitters the whole battlefield (this Node2D and
+## its Background/Wall/Slots/World children) while leaving the UI CanvasLayer
+## untouched, since CanvasLayer nodes ignore their parent's 2D transform.
+func _shake_screen(duration: float, strength: float) -> void:
+	var steps := maxi(4, int(duration / 0.04))
+	var tw := create_tween()
+	for i in range(steps):
+		var decay := 1.0 - float(i) / steps
+		var offset := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * strength * decay
+		tw.tween_property(self, "position", offset, 0.04)
+	tw.tween_property(self, "position", Vector2.ZERO, 0.04)
+
+## Full-screen color pulse used to punctuate big moments (currently just the
+## Demon God promotion). Added straight to the UI CanvasLayer so it overlays
+## everything without blocking input.
+func _flash_screen(color: Color, duration: float) -> void:
+	var rect := ColorRect.new()
+	rect.color = Color(color.r, color.g, color.b, 0.55)
+	rect.anchor_right = 1.0
+	rect.anchor_bottom = 1.0
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.z_index = 100
+	$UI.add_child(rect)
+	var tw := rect.create_tween()
+	tw.tween_property(rect, "color:a", 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(rect.queue_free)
+
+## Big centered Demon God title card, built and animated entirely in code
+## (mirrors _show_banner's punch-in/hold/fade rhythm) so no scene edit is
+## needed for this rare, escalating moment.
+func _spawn_demon_god_title_card(text: String, color: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.anchor_left = 0.5
+	label.anchor_right = 0.5
+	label.anchor_top = 0.5
+	label.anchor_bottom = 0.5
+	label.offset_left = -320.0
+	label.offset_right = 320.0
+	label.offset_top = -40.0
+	label.offset_bottom = 40.0
+	label.pivot_offset = Vector2(320, 40)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 52)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color(0.35, 0.05, 0.05))
+	label.add_theme_constant_override("outline_size", 12)
+	label.z_index = 101
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.modulate.a = 0.0
+	label.scale = Vector2(0.4, 0.4)
+	$UI.add_child(label)
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "modulate:a", 1.0, 0.2)
+	tw.tween_property(label, "scale", Vector2(1.15, 1.15), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(label, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_SINE)
+	tw.chain().tween_interval(1.1)
+	tw.chain().tween_property(label, "modulate:a", 0.0, 0.4)
+	tw.chain().tween_callback(label.queue_free)
+
+## Tier-colored burst + expanding glow ring on merge, scaling up with rarity
+## so leveling into Epic/Legendary/Demon God feels like a bigger deal than
+## a plain Common-to-Rare merge.
+const MERGE_FX_AMOUNT := [14, 20, 26, 34, 46]
+
+func _spawn_merge_fx(pos: Vector2, tier: Rarity.Tier) -> void:
+	var color := Rarity.color_for_tier(tier)
+	var glow_mat := CanvasItemMaterial.new()
+	glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+
+	var burst := GPUParticles2D.new()
+	burst.texture = Rarity.aura_texture(tier)
+	burst.amount = MERGE_FX_AMOUNT[tier]
+	burst.lifetime = 0.45
+	burst.one_shot = true
+	burst.explosiveness = 1.0
+	burst.global_position = pos
+	burst.material = glow_mat
+	var mat := ParticleProcessMaterial.new()
+	mat.spread = 180.0
+	mat.gravity = Vector3.ZERO
+	mat.initial_velocity_min = 40.0
+	mat.initial_velocity_max = 90.0 + 20.0 * tier
+	mat.scale_min = 0.15
+	mat.scale_max = 0.3 + 0.06 * tier
+	mat.color = color
+	burst.process_material = mat
+	world.add_child(burst)
+	burst.emitting = true
+	burst.finished.connect(burst.queue_free)
+
+	var ring := Sprite2D.new()
+	ring.texture = Rarity.aura_texture(tier)
+	ring.global_position = pos
+	ring.modulate = Color(color.r, color.g, color.b, 0.85)
+	ring.scale = Vector2(0.2, 0.2)
+	ring.material = glow_mat
+	world.add_child(ring)
+	var ring_tw := ring.create_tween()
+	ring_tw.set_parallel(true)
+	ring_tw.tween_property(ring, "scale", Vector2(1.0, 1.0) * (1.0 + 0.15 * tier), 0.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tw.tween_property(ring, "modulate:a", 0.0, 0.4)
+	ring_tw.chain().tween_callback(ring.queue_free)
 
 func _swap_cats(dragged: Cat, other: Cat) -> void:
 	var target_slot: Slot = other.slot
@@ -615,11 +767,11 @@ func _spawn_enemy(boss: bool) -> void:
 	var hp := int(round(22.0 * pow(1.18, wave - 1) * pow(1.13, level_num - 1) * _board_capacity_factor()))
 	# Rewards scale exponentially like enemy HP does, or buying/merging
 	# stalls out mid-match while enemies keep compounding.
-	var reward := int(round(12.0 * pow(1.18, wave - 1))) + 5 * (level_num - 1)
+	var reward := int(round((12.0 * pow(1.18, wave - 1) + 5 * (level_num - 1)) * 0.45))
 	if boss:
 		enemy.enemy_index = (level_num - 1) % 7 + 1
-		enemy.max_hp = hp * (8 if wave >= WIN_WAVE else 5)
-		enemy.speed = randf_range(18.0, 24.0)
+		enemy.max_hp = hp * (11 if wave >= WIN_WAVE else 7)
+		enemy.speed = randf_range(14.0, 19.0)
 		enemy.damage = (6 + 2 * wave) * 5
 		enemy.gold_reward = reward * 8
 	else:

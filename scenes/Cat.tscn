@@ -13,3 +13,9 @@ z_index = 0
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 z_index = 1
 scale = Vector2(0.75, 0.75)
+
+[node name="AscensionBadge" type="Sprite2D" parent="."]
+position = Vector2(28, -18)
+scale = Vector2(0.35, 0.35)
+z_index = 2
+visible = false

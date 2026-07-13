@@ -8,6 +8,7 @@ extends Node2D
 signal drag_started(cat: Cat)
 
 const BulletScene := preload("res://scenes/Bullet.tscn")
+const DEMON_FIRE_SFX := preload("res://sfx/bullets/demon-god-bullet-fired.mp3")
 const MAX_CHARACTER := 15
 const BASE_DAMAGE := 6.0
 const DAMAGE_GROWTH := 1.3     # per character; was mistakenly left at the old 1.38^4
@@ -18,16 +19,30 @@ const ATK_RANGE := 950.0
 const SPRITE_SCALE := 0.75
 const VERTICAL_NUDGE := 26.0  # lifts the sprite (and its foot-level rarity aura) up, purely cosmetic
 
+## Post-cap power stacking: once a cat reaches Demon God (the last character
+## tier), merging two of them no longer changes its character, so instead it
+## "ascends" — a permanent stat + visual escalation reusing the Up0..Up3
+## chevron art as a stage badge, one stage per merge, capped at MAX_ASCENSION.
+const MAX_ASCENSION := 4
+const ASCENSION_DAMAGE_GROWTH := 1.25
+const ASCENSION_BADGE_TEX := [
+	"res://Png/Ui/Up0.png", "res://Png/Ui/Up1.png", "res://Png/Ui/Up2.png", "res://Png/Ui/Up3.png",
+]
+
 var character: int = 1
 var row: int = 0
 var slot: Node2D = null          # the board Slot this cat currently occupies
 var dragging: bool = false
+var ascension: int = 0
 
 var _cooldown: float = 0.0
 var _target: Node2D = null
+var _ascension_particles: GPUParticles2D = null
+var _aura_tween: Tween = null
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var tier_aura: Sprite2D = $TierAura
+@onready var ascension_badge: Sprite2D = $AscensionBadge
 
 # Character idle-frame canvases aren't a uniform size across the art pack
 # (e.g. C1-5 are 150x150 but C9-10 are 198x179), and AnimatedSprite2D
@@ -47,13 +62,20 @@ static func damage_for_character(char_index: int) -> int:
 	var mult: float = GameState.cat_damage_multiplier(char_index)
 	return int(round(BASE_DAMAGE * pow(DAMAGE_GROWTH, char_index - 1) * mult))
 
+## This cat's actual per-shot damage, including its Demon God ascension
+## stacking on top of the character-derived base damage.
+func current_damage() -> int:
+	return int(round(damage_for_character(character) * pow(ASCENSION_DAMAGE_GROWTH, ascension)))
+
 func _ready() -> void:
 	add_to_group("cats")
 	anim.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
 	anim.animation_finished.connect(_on_anim_finished)
 	tier_aura.position.y -= VERTICAL_NUDGE
+	ascension_badge.position.y -= VERTICAL_NUDGE
 	_start_aura_pulse()
 	set_character(character)
+	_refresh_ascension_visuals()
 
 func set_character(new_character: int) -> void:
 	character = new_character
@@ -126,19 +148,29 @@ func _fire() -> void:
 	anim.play("shoot")
 	var muzzle_pos := global_position + Vector2(42, -10)
 	Fx.muzzle_flash(get_parent(), muzzle_pos)
+	if Rarity.tier_for_character(character) == Rarity.Tier.DEMON_GOD:
+		_sfx_fire()
 	var b = BulletScene.instantiate()
 	get_parent().add_child(b)
 	b.global_position = muzzle_pos
-	b.setup(_target, damage_for_character(character), character)
+	b.setup(_target, current_damage(), character)
 
 	if GameState.is_character_purchased(character):
 		var b2 := BulletScene.instantiate()
 		get_parent().add_child(b2)
 		b2.global_position = muzzle_pos
-		b2.setup(_target, damage_for_character(character), character)
+		b2.setup(_target, current_damage(), character)
 		b2.scale = Vector2(0.7, 0.7)
 		var tw := b2.create_tween()
 		tw.tween_property(b2, "scale", Vector2(0.55, 0.55), 0.3)
+
+func _sfx_fire() -> void:
+	var p := AudioStreamPlayer2D.new()
+	p.stream = DEMON_FIRE_SFX
+	p.global_position = global_position
+	p.finished.connect(p.queue_free)
+	get_parent().add_child(p)
+	p.play()
 
 func _on_anim_finished() -> void:
 	if anim.animation == "shoot":
@@ -163,10 +195,68 @@ func update_aura_color(char_index: int) -> void:
 const AURA_PULSE_SCALE := 1.1
 const AURA_PULSE_DURATION := 0.9
 
-func _start_aura_pulse() -> void:
+## speed_mult > 1 pulses faster/wider, used to make an ascended Demon God's
+## aura visibly more "charged up" the further it has ascended.
+func _start_aura_pulse(speed_mult: float = 1.0) -> void:
+	if _aura_tween:
+		_aura_tween.kill()
 	var base_scale := tier_aura.scale
-	var tw := create_tween()
-	tw.set_loops()
-	tw.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_property(tier_aura, "scale", base_scale * AURA_PULSE_SCALE, AURA_PULSE_DURATION)
-	tw.tween_property(tier_aura, "scale", base_scale, AURA_PULSE_DURATION)
+	var peak := base_scale * (AURA_PULSE_SCALE + 0.05 * (speed_mult - 1.0))
+	var duration := AURA_PULSE_DURATION / speed_mult
+	_aura_tween = create_tween()
+	_aura_tween.set_loops()
+	_aura_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_aura_tween.tween_property(tier_aura, "scale", peak, duration)
+	_aura_tween.tween_property(tier_aura, "scale", base_scale, duration)
+
+## Sets this cat's Demon God ascension stage (0 = plain Demon God, up to
+## MAX_ASCENSION), refreshing the chevron badge, aura heat/speed, and ambient
+## spark particles to match — a low-key bump at stage 1, escalating toward a
+## Super-Saiyan-style full glow at MAX_ASCENSION.
+func set_ascension(level: int) -> void:
+	ascension = clampi(level, 0, MAX_ASCENSION)
+	_refresh_ascension_visuals()
+
+func _refresh_ascension_visuals() -> void:
+	if ascension <= 0:
+		ascension_badge.visible = false
+		tier_aura.modulate = Color.WHITE
+		_start_aura_pulse(1.0)
+		_set_ascension_particles(false)
+		return
+	ascension_badge.visible = true
+	ascension_badge.texture = load(ASCENSION_BADGE_TEX[ascension - 1])
+	var heat := 1.0 + 0.35 * ascension
+	tier_aura.modulate = Color(heat, heat, heat, 1.0)
+	_start_aura_pulse(1.0 + 0.25 * ascension)
+	_set_ascension_particles(true)
+
+## Continuous rising gold spark trail that grows denser/faster/brighter with
+## each ascension stage, layered on top of the (already pulsing) tier aura.
+func _set_ascension_particles(on: bool) -> void:
+	if not on:
+		if _ascension_particles:
+			_ascension_particles.emitting = false
+		return
+	if _ascension_particles == null:
+		_ascension_particles = GPUParticles2D.new()
+		_ascension_particles.position = Vector2(0, -VERTICAL_NUDGE)
+		_ascension_particles.z_index = 1
+		var glow_mat := CanvasItemMaterial.new()
+		glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		_ascension_particles.material = glow_mat
+		_ascension_particles.texture = Rarity.aura_texture(Rarity.Tier.DEMON_GOD)
+		add_child(_ascension_particles)
+	var mat := ParticleProcessMaterial.new()
+	mat.direction = Vector3(0, -1, 0)
+	mat.spread = 20.0
+	mat.gravity = Vector3(0, -50.0 - 20.0 * ascension, 0)
+	mat.initial_velocity_min = 18.0 + 8.0 * ascension
+	mat.initial_velocity_max = 32.0 + 12.0 * ascension
+	mat.scale_min = 0.06
+	mat.scale_max = 0.1 + 0.025 * ascension
+	mat.color = Color(1.0, 0.85, 0.3, 0.75)
+	_ascension_particles.process_material = mat
+	_ascension_particles.amount = 5 + 4 * ascension
+	_ascension_particles.lifetime = 0.55
+	_ascension_particles.emitting = true

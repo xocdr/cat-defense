@@ -23,6 +23,15 @@ const LOSE_X := 70.0
 const REG_SCALE := 0.65
 const BOSS_SCALE := 0.85
 
+# Enemy canvases aren't a uniform size across the art pack, and
+# AnimatedSprite2D centers on the raw canvas rather than on the enemy's feet,
+# so left uncorrected different enemy types visibly float/sink relative to
+# their row's Y line (and relative to cats, whose feet ARE baseline-corrected
+# in cat.gd — see VERTICAL_NUDGE there). Mirror that correction here so every
+# enemy's feet — and the cats they're lined up against — sit on the same
+# on-screen row line.
+const VERTICAL_NUDGE_PX := 19.5  # matches cat.gd's on-screen nudge (26 * cat SPRITE_SCALE 0.75)
+
 var wall: Wall = null            # assigned by main before add_child
 var hp: int
 var state: String = "walk"
@@ -31,6 +40,9 @@ var _attack_timer: float = 0.0
 var _stop_jitter: float = 0.0
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+
+static var _foot_offset_cache: Dictionary = {}
+static var _foot_reference: float = NAN
 
 func _ready() -> void:
 	hp = max_hp
@@ -44,8 +56,38 @@ func _ready() -> void:
 	])
 	var s := BOSS_SCALE if is_boss else REG_SCALE
 	anim.scale = Vector2(s, s)
+	anim.offset.y = _foot_offset(base_dir) - VERTICAL_NUDGE_PX / s
 	anim.play("walk")
 	anim.animation_finished.connect(_on_anim_finished)
+
+## Vertical offset (in unscaled texture pixels) that puts this enemy type's
+## walk-frame feet on the same baseline as "Enemy Reg 1", regardless of how
+## tall/padded its source canvas is. Mirrors Cat._foot_offset.
+func _foot_offset(base_dir: String) -> float:
+	if _foot_offset_cache.has(base_dir):
+		return _foot_offset_cache[base_dir]
+	if is_nan(_foot_reference):
+		_foot_reference = _feet_from_center(AnimUtil.cached_frames([
+			["walk", "res://Png/Enemies/Enemy Reg 1/Walk", 24.0, true],
+		]))
+	var offset := 0.0
+	var feet_from_center := _feet_from_center(anim.sprite_frames)
+	if not is_nan(feet_from_center):
+		offset = _foot_reference - feet_from_center
+	_foot_offset_cache[base_dir] = offset
+	return offset
+
+## Distance from a walk-frame texture's vertical center to the bottom of its
+## opaque content ("feet"), in unscaled texture pixels. NAN if the frame has
+## no opaque pixels (shouldn't happen for real enemy art).
+static func _feet_from_center(sf: SpriteFrames) -> float:
+	var tex := sf.get_frame_texture("walk", 0)
+	if not tex:
+		return NAN
+	var used := tex.get_image().get_used_rect()
+	if used.size.y <= 0:
+		return NAN
+	return (used.position.y + used.size.y) - tex.get_height() / 2.0
 
 func _process(delta: float) -> void:
 	match state:
