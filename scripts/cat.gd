@@ -6,6 +6,7 @@ extends Node2D
 ## the tier each character belongs to).
 
 signal drag_started(cat: Cat)
+signal swap_pressed(cat: Cat)
 
 const BulletScene := preload("res://scenes/Bullet.tscn")
 const DEMON_FIRE_SFX := preload("res://sfx/bullets/demon-god-bullet-fired.mp3")
@@ -43,6 +44,7 @@ var _aura_tween: Tween = null
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var tier_aura: Sprite2D = $TierAura
 @onready var ascension_badge: Sprite2D = $AscensionBadge
+@onready var swap_button: TextureButton = $SwapButton
 
 # Character idle-frame canvases aren't a uniform size across the art pack
 # (e.g. C1-5 are 150x150 but C9-10 are 198x179), and AnimatedSprite2D
@@ -74,10 +76,24 @@ func _ready() -> void:
 	tier_aura.position.y -= VERTICAL_NUDGE
 	ascension_badge.position.y -= VERTICAL_NUDGE
 	_start_aura_pulse()
+	swap_button.visible = false
+	swap_button.pressed.connect(func(): swap_pressed.emit(self))
 	set_character(character)
 	_refresh_ascension_visuals()
 
+## True only for a Demon God tier cat that hasn't ascended yet (no chevron
+## badge) — the condition under which the manual "Swap" merge button may show.
+func is_swap_eligible() -> bool:
+	return Rarity.tier_for_character(character) == Rarity.Tier.DEMON_GOD and ascension == 0
+
+func show_swap_button() -> void:
+	swap_button.visible = true
+
+func hide_swap_button() -> void:
+	swap_button.visible = false
+
 func set_character(new_character: int) -> void:
+	hide_swap_button()
 	character = new_character
 	var char_index := display_character(character)
 	var base_dir := "res://Png/Characters/C%d" % char_index
@@ -218,6 +234,7 @@ func set_ascension(level: int) -> void:
 	_refresh_ascension_visuals()
 
 func _refresh_ascension_visuals() -> void:
+	hide_swap_button()
 	if ascension <= 0:
 		ascension_badge.visible = false
 		tier_aura.modulate = Color.WHITE

@@ -7,6 +7,8 @@ extends Node2D
 const CatScene := preload("res://scenes/Cat.tscn")
 const SlotScene := preload("res://scenes/Slot.tscn")
 const EnemyScene := preload("res://scenes/Enemy.tscn")
+const TutorialOverlayScene := preload("res://scenes/TutorialOverlay.tscn")
+const TUTORIAL_SLOT_SIZE := Vector2(70.0, 70.0)
 
 # Board geometry, derived from the slot squares baked into the Area art
 # (original pixels * background scale 0.598 / 0.678). Row Y positions are
@@ -24,9 +26,12 @@ const AREA_BOARD_CONFIG := {
 	5: {"cols": [163.0, 246.0], "trash_pos": Vector2(163.0, 508.5), "trash_row": 4, "trash_col": 0},
 }
 
-const WAVE_SFX_PATH := "res://sfx/evil-cat-laugh.mp3"
+const WAVE_SFX_PATHS := [
+	"res://sfx/laughs sfx/evil-cat-laugh.mp3",
+	"res://sfx/laughs sfx/cartoonlaugh1.mp3",
+]
 const MERGE_SFX_PATH := "res://sfx/lvlup-cat-meow.mp3"
-const DEMON_GOD_SFX_PATH := "res://sfx/evil-cat-laugh.mp3"
+const DEMON_GOD_SFX_PATH := "res://sfx/laughs sfx/evil-cat-laugh.mp3"
 const PLACE_SFX_PATH := "res://sfx/cat-placed.mp3"
 const WAVE_COMPLETE_SFX_PATH := "res://sfx/wave complete.mp3"
 const LEVEL_COMPLETE_SFX_PATH := "res://sfx/level-complete.mp3"
@@ -61,6 +66,7 @@ const ITEM_DEFS := [
 	{"id": "spikes", "icon": "res://Png/Ui/AddonIcon8.png"},
 	{"id": "tnt", "icon": "res://Png/Ui/AddonIcon6.png"},
 	{"id": "boxer", "icon": "res://Png/Ui/AddonIcon7.png"},
+	{"id": "poison", "icon": "res://Png/Ui/AddonIcon9.png"},
 ]
 
 var level_num: int = 1
@@ -81,7 +87,12 @@ var slots: Array[Slot] = []
 var dragged_cat: Cat = null
 var drag_origin: Slot = null
 var armed_item: String = ""
+var _active_swap_cat: Cat = null    # Demon God cat currently showing its Swap button
+var swap_source_cat: Cat = null     # set once that button is pressed, awaiting a merge target tap
+var _tutorial_overlay: CanvasLayer = null
 var _wave_sfx_player: AudioStreamPlayer
+var _wave_sfx_streams: Array[AudioStream] = []
+var _wave_sfx_index: int = 0
 var _merge_sfx_player: AudioStreamPlayer
 var _place_sfx_player: AudioStreamPlayer
 var _wave_complete_sfx_player: AudioStreamPlayer
@@ -102,7 +113,7 @@ var _demon_god_sfx_player: AudioStreamPlayer
 @onready var repair_button: TextureButton = $UI/BottomBar/RepairButton
 @onready var repair_cost_label: Label = $UI/BottomBar/RepairButton/CostLabel
 @onready var item_buttons: Array[TextureButton] = [
-	$UI/BottomBar/Item0, $UI/BottomBar/Item1, $UI/BottomBar/Item2,
+	$UI/BottomBar/Item0, $UI/BottomBar/Item1, $UI/BottomBar/Item2, $UI/BottomBar/Item3,
 ]
 
 @onready var pause_panel: Control = $UI/PausePanel
@@ -121,8 +132,21 @@ var _demon_god_sfx_player: AudioStreamPlayer
 @onready var win_cards_label: Label = $UI/WinPanel/Panel/CardsLabel
 @onready var continue_button: TextureButton = $UI/WinPanel/Panel/ContinueButton
 
+func _apply_ui_theme() -> void:
+	# Main's root is a Node2D, so its "UI" CanvasLayer's Control children
+	# never pick up get_tree().root.theme (Control only inherits a Window's
+	# theme when every ancestor up to the Window is itself a Control) —
+	# assign it directly to each top-level Control instead.
+	var ui_theme := get_tree().root.theme
+	if not ui_theme:
+		return
+	for child in $UI.get_children():
+		if child is Control:
+			child.theme = ui_theme
+
 func _ready() -> void:
 	randomize()
+	_apply_ui_theme()
 	GameState.set_bgm(GameState.BATTLE_BGM_PATH)
 	level_num = GameState.selected_level
 	_setup_level()
@@ -134,7 +158,9 @@ func _ready() -> void:
 	settings_button.pressed.connect(_on_pause_pressed)
 
 	_wave_sfx_player = AudioStreamPlayer.new()
-	_wave_sfx_player.stream = load(WAVE_SFX_PATH)
+	for sfx_path in WAVE_SFX_PATHS:
+		_wave_sfx_streams.append(load(sfx_path))
+	_wave_sfx_player.stream = _wave_sfx_streams[0]
 	add_child(_wave_sfx_player)
 
 	_merge_sfx_player = AudioStreamPlayer.new()
@@ -163,6 +189,9 @@ func _ready() -> void:
 
 	_refresh_hud()
 	_start_wave()
+
+	if not GameState.tutorial_seen and GameState.tutorial_step >= 1:
+		call_deferred("_start_main_tutorial")
 
 func _setup_level() -> void:
 	area_index = (level_num - 1) % 5 + 1
@@ -249,14 +278,19 @@ func _slot_at(pos: Vector2) -> Slot:
 const SUMMON_PITY_CHANCE := 0.55
 
 func summon_character() -> int:
-	# Summons always produce a Tier 1 (COMMON) cat. Merging requires an exact
-	# character match, not just a tier match, so the roll is weighted toward
-	# characters already on the board (a "pity" pull) — otherwise smaller
-	# boards (fewer slots to simultaneously hold candidate duplicates, e.g.
-	# the 9/10-slot Area 4/5 layouts vs. Area 1/2/3's 15) suffer far worse
-	# merge odds than bigger boards for purely layout reasons.
-	var lo := Rarity.first_character_for_tier(Rarity.Tier.COMMON)
-	var hi := Rarity.last_character_for_tier(Rarity.Tier.COMMON)
+	return _random_character_in_tier(Rarity.Tier.COMMON)
+
+## Picks a random character within `tier`. Merging (and buying) requires an
+## exact character match, not just a tier match, so the roll is weighted
+## toward characters already on the board (a "pity" pull) — otherwise
+# smaller boards (fewer slots to simultaneously hold candidate duplicates,
+# e.g. the 9/10-slot Area 4/5 layouts vs. Area 1/2/3's 15) suffer far worse
+# merge odds than bigger boards for purely layout reasons, and tiers past
+# COMMON have no other source of duplicates at all once summons stop
+# landing there.
+func _random_character_in_tier(tier: Rarity.Tier) -> int:
+	var lo := Rarity.first_character_for_tier(tier)
+	var hi := Rarity.last_character_for_tier(tier)
 	if randf() < SUMMON_PITY_CHANCE:
 		var on_board: Array[int] = []
 		for s in slots:
@@ -275,6 +309,8 @@ func _buy_at_slot(slot: Slot) -> void:
 	coins -= SUMMON_COST
 	_place_new_cat(slot, summon_character())
 	_refresh_hud()
+	if _tutorial_overlay and TutorialSteps.STEPS[GameState.tutorial_step]["target"] == "buy_slot":
+		_on_tutorial_advanced()
 
 func _place_new_cat(slot: Slot, character: int) -> void:
 	var cat: Cat = CatScene.instantiate()
@@ -282,6 +318,7 @@ func _place_new_cat(slot: Slot, character: int) -> void:
 	cat.row = slot.row
 	cat.slot = slot
 	cat.position = slot.position
+	cat.swap_pressed.connect(_on_cat_swap_pressed)
 	world.add_child(cat)
 	slot.occupant = cat
 	_record_character(character)
@@ -342,6 +379,7 @@ func _input(event: InputEvent) -> void:
 ## Aborts an in-flight drag, snapping the cat back to its slot. Used when the
 ## game pauses or ends mid-drag, since the mouse release may never arrive.
 func _cancel_drag() -> void:
+	_cancel_swap_pick()
 	if dragged_cat == null:
 		return
 	dragged_cat.set_dragging(false)
@@ -350,7 +388,44 @@ func _cancel_drag() -> void:
 	drag_origin = null
 	_clear_highlights()
 
+## Dismisses any active/pending Demon God Swap button state without side effects.
+func _cancel_swap_pick() -> void:
+	swap_source_cat = null
+	if _active_swap_cat:
+		_active_swap_cat.hide_swap_button()
+		_active_swap_cat = null
+
+func _on_cat_swap_pressed(cat: Cat) -> void:
+	cat.hide_swap_button()
+	_active_swap_cat = null
+	swap_source_cat = cat
+
+## Resolves the second tap of a Demon God Swap-merge: finds the nearest
+## occupied slot to `pos` and, if it holds another Demon God cat, merges them
+## into the next ascension stage regardless of their specific character
+## (bypassing the strict same-character `_can_merge` rule used for drags).
+## Any other tap (empty space, the source cat itself, a non-Demon-God cat)
+## silently cancels the pick.
+func _handle_swap_pick(pos: Vector2) -> void:
+	var source := swap_source_cat
+	swap_source_cat = null
+	if source == null or not is_instance_valid(source):
+		return
+	var best: Cat = null
+	var best_d := DRAG_PICK_RADIUS
+	for s in slots:
+		if s.occupant and s.position.distance_to(pos) < best_d:
+			best = s.occupant
+			best_d = s.position.distance_to(pos)
+	if best == null or best == source:
+		return
+	if Rarity.tier_for_character(best.character) == Rarity.Tier.DEMON_GOD:
+		_merge_cats(source, source.slot, best)
+
 func _on_press(pos: Vector2) -> void:
+	if swap_source_cat != null:
+		_handle_swap_pick(pos)
+		return
 	if dragged_cat != null:
 		return
 	if armed_item != "":
@@ -362,6 +437,9 @@ func _on_press(pos: Vector2) -> void:
 		if c.global_position.distance_to(pos) < DRAG_PICK_RADIUS:
 			c.collect()
 			return
+	if _active_swap_cat:
+		_active_swap_cat.hide_swap_button()
+		_active_swap_cat = null
 	var best: Cat = null
 	var best_d := DRAG_PICK_RADIUS
 	for s in slots:
@@ -387,15 +465,31 @@ func _on_release(pos: Vector2) -> void:
 	var slot := _slot_at(pos)
 	if slot == null or slot == drag_origin:
 		_return_to_origin(cat)
+		_handle_tap_in_place(cat)
 	elif slot.is_trash:
 		_sell_cat(cat)
 	elif slot.occupant == null:
 		_move_cat(cat, slot)
 	elif _can_merge(cat, slot.occupant):
-		_merge_cats(cat, slot.occupant)
+		_merge_cats(cat, drag_origin, slot.occupant)
 	else:
 		_swap_cats(cat, slot.occupant)
 	drag_origin = null
+
+## Toggles a Demon God cat's Swap button when it's released back on its own
+## slot (a tap-in-place, whether from a genuine tap or a drag that snapped
+## back to origin) — only one cat's button is shown at a time.
+func _handle_tap_in_place(cat: Cat) -> void:
+	if _active_swap_cat == cat:
+		cat.hide_swap_button()
+		_active_swap_cat = null
+		return
+	if _active_swap_cat:
+		_active_swap_cat.hide_swap_button()
+		_active_swap_cat = null
+	if cat.is_swap_eligible():
+		cat.show_swap_button()
+		_active_swap_cat = cat
 
 func _return_to_origin(cat: Cat) -> void:
 	cat.position = drag_origin.position
@@ -426,8 +520,8 @@ func _can_merge(a: Cat, b: Cat) -> bool:
 		return false
 	return Rarity.tier_for_character(a.character) == Rarity.tier_for_character(b.character)
 
-func _merge_cats(dragged: Cat, kept: Cat) -> void:
-	drag_origin.occupant = null
+func _merge_cats(dragged: Cat, dragged_slot: Slot, kept: Cat) -> void:
+	dragged_slot.occupant = null
 	dragged.queue_free()
 	if GameState.sound_on:
 		_merge_sfx_player.play()
@@ -436,11 +530,11 @@ func _merge_cats(dragged: Cat, kept: Cat) -> void:
 	var is_tier_up := current_tier < Rarity.Tier.DEMON_GOD
 	if is_tier_up:
 		var next_tier: Rarity.Tier = current_tier + 1
-		new_character = randi_range(Rarity.first_character_for_tier(next_tier), Rarity.last_character_for_tier(next_tier))
+		new_character = _random_character_in_tier(next_tier)
 	kept.set_character(new_character)
 	_record_character(new_character)
 	var new_tier := Rarity.tier_for_character(new_character)
-	Fx.explosion(world, kept.position, 0.12)
+	Fx.smoke_spell(world, kept.position, 0.14)
 	_spawn_merge_fx(kept.position, new_tier)
 	Fx.flash_hit(kept)
 	FloatText.spawn(world, kept.position + Vector2(0, -30), "%s!" % Rarity.name_for_tier(new_tier), Color(0.6, 1, 0.4), 20)
@@ -657,6 +751,7 @@ func _try_place_item(pos: Vector2) -> void:
 			world.add_child(trap)
 		"tnt":
 			Fx.explosion(world, pos, 0.3)
+			Fx.smoke_explosion(world, pos, 0.35)
 			var dmg := 150 + 50 * wave
 			for e in get_tree().get_nodes_in_group("enemies"):
 				if not e.is_dead() and e.global_position.distance_to(pos) < 150.0:
@@ -668,6 +763,12 @@ func _try_place_item(pos: Vector2) -> void:
 			boxer.punch_damage = 25 + 10 * wave
 			boxer.position = place
 			world.add_child(boxer)
+		"poison":
+			var cloud := PoisonCloud.new()
+			cloud.row = row
+			cloud.damage_per_tick = 10 + 4 * wave
+			cloud.position = place
+			world.add_child(cloud)
 	_refresh_item_buttons()
 
 func _nearest_row(y: float) -> int:
@@ -717,6 +818,8 @@ func _start_wave() -> void:
 		enemies_to_spawn = int(enemies_to_spawn * 0.7)
 	spawn_timer = 1.2
 	if GameState.sound_on:
+		_wave_sfx_player.stream = _wave_sfx_streams[_wave_sfx_index]
+		_wave_sfx_index = (_wave_sfx_index + 1) % _wave_sfx_streams.size()
 		_wave_sfx_player.play()
 	_refresh_hud()
 	_show_banner("Wave %d Incoming!" % wave)
@@ -770,8 +873,8 @@ func _spawn_enemy(boss: bool) -> void:
 	var reward := int(round((12.0 * pow(1.18, wave - 1) + 5 * (level_num - 1)) * 0.45))
 	if boss:
 		enemy.enemy_index = (level_num - 1) % 7 + 1
-		enemy.max_hp = hp * (11 if wave >= WIN_WAVE else 7)
-		enemy.speed = randf_range(14.0, 19.0)
+		enemy.max_hp = hp * (16 if wave >= WIN_WAVE else 10)
+		enemy.speed = randf_range(9.0, 13.0)
 		enemy.damage = (6 + 2 * wave) * 5
 		enemy.gold_reward = reward * 8
 	else:
@@ -794,6 +897,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	coins += enemy.gold_reward
 	FloatText.spawn(world, enemy.global_position + Vector2(0, -20), "+%d" % enemy.gold_reward, Color(1, 0.85, 0.3), 16)
 	if enemy.is_boss:
+		Fx.smoke_explosion(world, enemy.global_position, 0.5)
 		_burst_coins(enemy.global_position, BOSS_COIN_COUNT)
 	elif randf() < _coin_drop_chance():
 		_spawn_coin_pickup(enemy.global_position, 1)
@@ -899,6 +1003,83 @@ func _fmt(n: int) -> String:
 	if n >= 100000:
 		return "%dk" % (n / 1000)
 	return str(n)
+
+# ---------------------------------------------------------------- tutorial
+
+func _start_main_tutorial() -> void:
+	await SceneTransition.fade_in_finished
+	if not is_instance_valid(self) or GameState.tutorial_seen or GameState.tutorial_step < 1:
+		return
+	_tutorial_overlay = TutorialOverlayScene.instantiate()
+	add_child(_tutorial_overlay)
+	_tutorial_overlay.advanced.connect(_on_tutorial_advanced)
+	_tutorial_overlay.skipped.connect(_on_tutorial_skipped)
+	_show_main_tutorial_step()
+
+func _show_main_tutorial_step() -> void:
+	var index: int = GameState.tutorial_step
+	if index >= TutorialSteps.STEPS.size():
+		_end_main_tutorial()
+		return
+	var step: Dictionary = TutorialSteps.STEPS[index]
+	var rect := _tutorial_target_rect(step["target"])
+	get_tree().paused = not step["gated"]
+	_tutorial_overlay.show_step(step["text"], rect, step["tap_to_continue"])
+
+func _tutorial_target_rect(target: String) -> Rect2:
+	match target:
+		"buy_slot":
+			var free := _free_slots()
+			if not free.is_empty():
+				return Rect2(free[0].global_position - TUTORIAL_SLOT_SIZE * 0.5, TUTORIAL_SLOT_SIZE)
+			return _board_rect()
+		"merge_hint":
+			var pair_rect := _matching_pair_rect()
+			return pair_rect if pair_rect.size != Vector2.ZERO else _board_rect()
+		"wall":
+			return Rect2(wall.global_position + Wall.CRATE_REGION.position * Wall.BG_SCALE, Wall.CRATE_REGION.size * Wall.BG_SCALE)
+		"repair_button":
+			return repair_button.get_global_rect()
+		"item_buttons":
+			var union_rect := item_buttons[0].get_global_rect()
+			for btn in item_buttons:
+				union_rect = union_rect.merge(btn.get_global_rect())
+			return union_rect
+		_:
+			return _board_rect()
+
+func _board_rect() -> Rect2:
+	var top_left := slots[0].global_position - TUTORIAL_SLOT_SIZE * 0.5
+	var result := Rect2(top_left, TUTORIAL_SLOT_SIZE)
+	for s in slots:
+		result = result.merge(Rect2(s.global_position - TUTORIAL_SLOT_SIZE * 0.5, TUTORIAL_SLOT_SIZE))
+	return result
+
+func _matching_pair_rect() -> Rect2:
+	for a in slots:
+		if a.is_free() or a.is_trash:
+			continue
+		for b in slots:
+			if b == a or b.is_free() or b.is_trash:
+				continue
+			if b.occupant.character == a.occupant.character:
+				return Rect2(a.global_position - TUTORIAL_SLOT_SIZE * 0.5, TUTORIAL_SLOT_SIZE).merge(
+					Rect2(b.global_position - TUTORIAL_SLOT_SIZE * 0.5, TUTORIAL_SLOT_SIZE))
+	return Rect2()
+
+func _on_tutorial_advanced() -> void:
+	GameState.advance_tutorial_step()
+	_show_main_tutorial_step()
+
+func _on_tutorial_skipped() -> void:
+	_end_main_tutorial()
+
+func _end_main_tutorial() -> void:
+	GameState.mark_tutorial_seen()
+	get_tree().paused = false
+	if _tutorial_overlay:
+		_tutorial_overlay.queue_free()
+		_tutorial_overlay = null
 
 func _flash_deny(button: TextureButton) -> void:
 	var tw := button.create_tween()

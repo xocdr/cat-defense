@@ -1,8 +1,11 @@
 extends CanvasLayer
 
+signal fade_in_finished
+
 var overlay: ColorRect
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	overlay = ColorRect.new()
 	overlay.name = "Overlay"
 	overlay.color = Color.BLACK
@@ -36,3 +39,4 @@ func _fade_in() -> void:
 	var tween := create_tween().set_ease(Tween.EASE_OUT)
 	tween.tween_property(overlay, "modulate:a", 0.0, 0.3)
 	await tween.finished
+	fade_in_finished.emit()

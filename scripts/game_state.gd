@@ -17,7 +17,7 @@ const SAVE_PATH := "user://savegame.cfg"
 const MAX_LEVEL := 8            # level buttons on the lobby map
 const CAT_COUNT := 15           # C1..C15 character tiers
 const MAX_ITEM_COUNT := 5
-const ITEM_IDS := ["spikes", "tnt", "boxer"]
+const ITEM_IDS := ["spikes", "tnt", "boxer", "poison"]
 const ITEM_GEM_COST := 25
 const CHARACTER_UNLOCK_COSTS := [0, 100, 200, 400, 800, 1200, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500]
 const DAILY_BASE_GEMS := 20
@@ -37,7 +37,7 @@ const GEM_COST_GROWTH := 1.5         # gem cost multiplier per level
 var gems: int = 50
 var unlocked_level: int = 1                 # highest level the player may enter
 var completed_levels: Array = []            # level numbers beaten at least once
-var items: Dictionary = {"spikes": 2, "tnt": 3, "boxer": 2}
+var items: Dictionary = {"spikes": 2, "tnt": 3, "boxer": 2, "poison": 2}
 var cat_data: Array = []                    # per-character {unlocked, level, current_cards}, see _default_cat_data()
 var owned_characters: Array = [1]           # purchased character indices (1-based), C1 free
 var max_merge_character: int = 1            # best cat character ever reached in a match
@@ -46,10 +46,12 @@ var sound_on: bool = true
 var vibra_on: bool = true
 var daily_streak: int = 0
 var daily_last_claim: String = ""           # "YYYY-MM-DD"
+var tutorial_seen: bool = false             # first-launch tutorial completed/skipped
 
 # --- transient (not saved) ---
 var selected_level: int = 1                 # set by the lobby before entering Main
 var last_cards_awarded: Dictionary = {}     # {char_index: count} from the most recent chest
+var tutorial_step: int = 0                  # cursor into TutorialSteps.STEPS, resets on relaunch
 
 func _ready() -> void:
 	cat_data = _default_cat_data()
@@ -276,6 +278,15 @@ func set_toggle(key: String, value: bool) -> void:
 		"vibra": vibra_on = value
 	save()
 
+# ---------------------------------------------------------------- tutorial
+
+func mark_tutorial_seen() -> void:
+	tutorial_seen = true
+	save()
+
+func advance_tutorial_step() -> void:
+	tutorial_step += 1
+
 func _setup_music() -> void:
 	_music_player = AudioStreamPlayer.new()
 	_music_player.name = "MusicPlayer"
@@ -325,6 +336,7 @@ func save() -> void:
 	cfg.set_value("settings", "music_on", music_on)
 	cfg.set_value("settings", "sound_on", sound_on)
 	cfg.set_value("settings", "vibra_on", vibra_on)
+	cfg.set_value("settings", "tutorial_seen", tutorial_seen)
 	cfg.set_value("daily", "streak", daily_streak)
 	cfg.set_value("daily", "last_claim", daily_last_claim)
 	cfg.save(SAVE_PATH)
@@ -341,6 +353,7 @@ func load_save() -> void:
 	if max_merge_character == -1:
 		# migration: derive from the old fine-grained level scale (4 levels/character)
 		var legacy_level: int = cfg.get_value("profile", "max_merge_level", 1)
+		@warning_ignore("integer_division")
 		max_merge_character = clampi((legacy_level - 1) / 4 + 1, 1, CAT_COUNT)
 	owned_characters = cfg.get_value("profile", "owned_characters", [])
 	var legacy_pips: Array = cfg.get_value("profile", "cat_upgrades", [])
@@ -370,5 +383,6 @@ func load_save() -> void:
 	music_on = cfg.get_value("settings", "music_on", music_on)
 	sound_on = cfg.get_value("settings", "sound_on", sound_on)
 	vibra_on = cfg.get_value("settings", "vibra_on", vibra_on)
+	tutorial_seen = cfg.get_value("settings", "tutorial_seen", tutorial_seen)
 	daily_streak = cfg.get_value("daily", "streak", daily_streak)
 	daily_last_claim = cfg.get_value("daily", "last_claim", daily_last_claim)

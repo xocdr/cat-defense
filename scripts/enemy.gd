@@ -38,11 +38,35 @@ var state: String = "walk"
 var _attack_target: Node2D = null
 var _attack_timer: float = 0.0
 var _stop_jitter: float = 0.0
+var _aura_tween: Tween = null
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var boss_aura: Sprite2D = $BossAura
 
 static var _foot_offset_cache: Dictionary = {}
 static var _foot_reference: float = NAN
+static var _boss_aura_tex: GradientTexture2D = null
+
+## Menacing red pulse, distinct from the cats' rarity auras, marking a wave
+## boss out at a glance.
+static func _boss_aura_texture() -> GradientTexture2D:
+	if _boss_aura_tex:
+		return _boss_aura_tex
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([
+		Color(1.0, 0.15, 0.1, 0.85),
+		Color(1.0, 0.15, 0.1, 0.0),
+	])
+	gradient.offsets = PackedFloat32Array([0.0, 1.0])
+	var tex := GradientTexture2D.new()
+	tex.gradient = gradient
+	tex.width = 160
+	tex.height = 160
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	_boss_aura_tex = tex
+	return tex
 
 func _ready() -> void:
 	hp = max_hp
@@ -59,6 +83,22 @@ func _ready() -> void:
 	anim.offset.y = _foot_offset(base_dir) - VERTICAL_NUDGE_PX / s
 	anim.play("walk")
 	anim.animation_finished.connect(_on_anim_finished)
+	if is_boss:
+		boss_aura.texture = _boss_aura_texture()
+		boss_aura.visible = true
+		_start_aura_pulse()
+
+const AURA_PULSE_SCALE := 1.15
+const AURA_PULSE_DURATION := 0.7
+
+func _start_aura_pulse() -> void:
+	var base_scale := boss_aura.scale
+	var peak := base_scale * AURA_PULSE_SCALE
+	_aura_tween = create_tween()
+	_aura_tween.set_loops()
+	_aura_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_aura_tween.tween_property(boss_aura, "scale", peak, AURA_PULSE_DURATION)
+	_aura_tween.tween_property(boss_aura, "scale", base_scale, AURA_PULSE_DURATION)
 
 ## Vertical offset (in unscaled texture pixels) that puts this enemy type's
 ## walk-frame feet on the same baseline as "Enemy Reg 1", regardless of how
@@ -139,6 +179,9 @@ func take_damage(amount: int) -> void:
 		state = "dead"
 		z_index = -1
 		anim.play("dead")
+		if _aura_tween:
+			_aura_tween.kill()
+		boss_aura.visible = false
 		died.emit(self)
 
 func _flash() -> void:

@@ -21,6 +21,15 @@ static func muzzle_flash(parent: Node, pos: Vector2) -> void:
 	var sprite := _one_shot(parent, pos, [["fx", "res://Png/ShootFx", 45.0, false]], 0.3)
 	sprite.offset = Vector2(100, 0)  # frames point right from the gun tip
 
+static func smoke_explosion(parent: Node, pos: Vector2, fx_scale: float = 0.3) -> void:
+	_one_shot(parent, pos, [["fx", "res://Png/Smoke Explosion", 24.0, false]], fx_scale)
+
+static func smoke_puff(parent: Node, pos: Vector2, fx_scale: float = 0.25) -> void:
+	_one_shot(parent, pos, [["fx", "res://Png/Smoke", 20.0, false]], fx_scale)
+
+static func smoke_spell(parent: Node, pos: Vector2, fx_scale: float = 0.2) -> void:
+	_one_shot(parent, pos, [["fx", "res://Png/Smoke Spell", 20.0, false]], fx_scale)
+
 static func flash_hit(target: CanvasItem) -> void:
 	target.modulate = Color(3.0, 2.4, 2.4)
 	var tw := target.create_tween()

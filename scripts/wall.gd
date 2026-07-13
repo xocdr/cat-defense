@@ -87,6 +87,7 @@ func _set_broken(value: bool) -> void:
 		_broken_overlay.visible = value
 	if value:
 		Fx.explosion(self, (CRATE_REGION.position + CRATE_REGION.size / 2.0) * BG_SCALE, 0.3)
+		Fx.smoke_puff(self, (CRATE_REGION.position + CRATE_REGION.size / 2.0) * BG_SCALE, 0.35)
 
 func _update_bar() -> void:
 	var pct := float(hp) / float(max_hp) if max_hp > 0 else 0.0

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://qshiv3iyf4e0"
+path="res://.godot/imported/cat-defense-ingame battle.mp3-d9fda88161619e5a132acbf59e3aa818.mp3str"
+
+[deps]
+
+source_file="res://bg music/cat-defense-ingame battle.mp3"
+dest_files=["res://.godot/imported/cat-defense-ingame battle.mp3-d9fda88161619e5a132acbf59e3aa818.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

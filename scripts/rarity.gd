@@ -13,7 +13,8 @@ const AURA_SIZE := 160
 static var _aura_cache: Dictionary = {}
 
 static func tier_for_character(char_index: int) -> Tier:
-	return clampi((char_index - 1) / CHARACTERS_PER_TIER, 0, Tier.DEMON_GOD)
+	@warning_ignore("integer_division")
+	return clampi((char_index - 1) / CHARACTERS_PER_TIER, 0, Tier.DEMON_GOD as int) as Tier
 
 static func first_character_for_tier(tier: Tier) -> int:
 	return tier * CHARACTERS_PER_TIER + 1

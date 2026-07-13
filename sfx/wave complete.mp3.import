@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://sffe2j81v7x0"
+path="res://.godot/imported/wave complete.mp3-23cf798c801aef1a062a0f763bbfca9e.mp3str"
+
+[deps]
+
+source_file="res://sfx/wave complete.mp3"
+dest_files=["res://.godot/imported/wave complete.mp3-23cf798c801aef1a062a0f763bbfca9e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

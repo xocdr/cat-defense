@@ -1,9 +1,8 @@
 extends Control
 
-signal navigate_to_shop
-
 const MAIN_SCENE_PATH := "res://scenes/Main.tscn"
 const CLICK_SFX_PATH := "res://sfx/boink.mp3"
+const TUTORIAL_OVERLAY_SCENE := preload("res://scenes/TutorialOverlay.tscn")
 
 const TEX_LEVEL_CURRENT := "res://Png/Ui/GreenLevel.png"
 const TEX_LEVEL_DONE := "res://Png/Ui/OrangeLvl.png"
@@ -12,11 +11,14 @@ const TEX_LEVEL_LOCKED := "res://Png/Ui/LockedLevel.png"
 @onready var map_content: Control = $MapScroll/MapContent
 
 var _click_player: AudioStreamPlayer
+var _tutorial_overlay: CanvasLayer = null
 
 func _ready() -> void:
 	_click_player = AudioStreamPlayer.new()
 	_click_player.stream = load(CLICK_SFX_PATH)
 	add_child(_click_player)
+	if not GameState.tutorial_seen and GameState.tutorial_step == 0:
+		call_deferred("_show_tutorial")
 
 func _play_click() -> void:
 	if GameState.sound_on:
@@ -47,5 +49,27 @@ func _on_level_pressed(level: int) -> void:
 	_play_click()
 	if not GameState.is_level_unlocked(level):
 		return
+	if _tutorial_overlay and level == 1:
+		GameState.advance_tutorial_step()
+		_tutorial_overlay.queue_free()
+		_tutorial_overlay = null
 	GameState.selected_level = level
 	SceneTransition.change_scene(MAIN_SCENE_PATH)
+
+func _show_tutorial() -> void:
+	await SceneTransition.fade_in_finished
+	if not is_instance_valid(self) or GameState.tutorial_seen or GameState.tutorial_step != 0:
+		return
+	var level1: Control = map_content.get_node("Level1")
+	var rect := Rect2(level1.get_global_rect())
+	_tutorial_overlay = TUTORIAL_OVERLAY_SCENE.instantiate()
+	add_child(_tutorial_overlay)
+	var step: Dictionary = TutorialSteps.STEPS[0]
+	_tutorial_overlay.show_step(step["text"], rect, step["tap_to_continue"])
+	_tutorial_overlay.skipped.connect(_on_tutorial_skipped)
+
+func _on_tutorial_skipped() -> void:
+	GameState.mark_tutorial_seen()
+	if _tutorial_overlay:
+		_tutorial_overlay.queue_free()
+		_tutorial_overlay = null

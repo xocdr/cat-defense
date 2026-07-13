@@ -1,0 +1,131 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/tutorial_overlay.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="RingStyle"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(1, 0.92, 0.35, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_left = 14
+corner_radius_bottom_right = 14
+
+[sub_resource type="StyleBoxFlat" id="CalloutStyle"]
+bg_color = Color(0.976, 0.925, 0.788, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.4, 0.2, 0.02, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_left = 16
+corner_radius_bottom_right = 16
+content_margin_left = 4
+content_margin_top = 4
+content_margin_right = 4
+content_margin_bottom = 4
+
+[sub_resource type="StyleBoxFlat" id="SkipStyle"]
+bg_color = Color(0.2, 0.2, 0.2, 0.6)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_left = 10
+corner_radius_bottom_right = 10
+
+[node name="TutorialOverlay" type="CanvasLayer"]
+layer = 90
+script = ExtResource("1")
+
+[node name="Dim" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Top" type="ColorRect" parent="Dim"]
+layout_mode = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Bottom" type="ColorRect" parent="Dim"]
+layout_mode = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Left" type="ColorRect" parent="Dim"]
+layout_mode = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Right" type="ColorRect" parent="Dim"]
+layout_mode = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Ring" type="Panel" parent="."]
+layout_mode = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("RingStyle")
+
+[node name="Catcher" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="Callout" type="PanelContainer" parent="."]
+layout_mode = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("CalloutStyle")
+
+[node name="Margin" type="MarginContainer" parent="Callout"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="Box" type="VBoxContainer" parent="Callout/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BodyLabel" type="Label" parent="Callout/Margin/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.15, 0.05, 1)
+theme_override_font_sizes/font_size = 20
+text = "Tutorial step"
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="Callout/Margin/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.38, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "Tap anywhere to continue"
+horizontal_alignment = 1
+
+[node name="SkipButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -170.0
+offset_top = 24.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_styles/normal = SubResource("SkipStyle")
+theme_override_styles/hover = SubResource("SkipStyle")
+theme_override_styles/pressed = SubResource("SkipStyle")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "Skip Tutorial"
