@@ -181,6 +181,8 @@ func _fire() -> void:
 		tw.tween_property(b2, "scale", Vector2(0.55, 0.55), 0.3)
 
 func _sfx_fire() -> void:
+	if not GameState.sound_on:
+		return
 	var p := AudioStreamPlayer2D.new()
 	p.stream = DEMON_FIRE_SFX
 	p.global_position = global_position

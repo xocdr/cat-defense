@@ -303,6 +303,8 @@ func _spawn_impact_embers(color: Color) -> void:
 	embers.finished.connect(embers.queue_free)
 
 func _sfx_hit() -> void:
+	if not GameState.sound_on:
+		return
 	var p := AudioStreamPlayer2D.new()
 	p.stream = DEMON_HIT_SFX if _rarity_tier == Rarity.Tier.DEMON_GOD else HIT_SFX
 	p.finished.connect(p.queue_free)
