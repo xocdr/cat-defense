@@ -75,7 +75,7 @@ const TIER_FX := {
 		"burst_amount": 36, "burst_lifetime": 0.5, "burst_vel_min": 80.0, "burst_vel_max": 220.0,
 		"burst_scale_min": 0.5, "burst_scale_max": 1.1,
 		"glow": true, "embers": true, "shockwave": true,
-		"aoe_radius": 90.0, "aoe_fraction": 0.5,
+		"aoe_radius": 70.0, "aoe_fraction": 0.3,
 	},
 }
 

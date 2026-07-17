@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cd6v7efpb6eyt" path="res://Png/Ui/5Bar.png" id="8"]
 [ext_resource type="PackedScene" uid="uid://brmfjg24p6tg" path="res://scenes/GemsHud.tscn" id="9"]
 [ext_resource type="Texture2D" uid="uid://beawbtby8ga1x" path="res://Png/Ui/AddonBtnyellow.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://sbcj4gpcyib1" path="res://Png/Ui/AddonIcon9.png" id="12"]
 
 [node name="ExtraPanel" type="Control" unique_id=1255480302]
 layout_mode = 3
@@ -87,10 +88,10 @@ anchor_left = 0.4
 anchor_top = 0.26
 anchor_right = 0.4
 anchor_bottom = 0.26
-offset_left = 136.0
-offset_top = 42.0
-offset_right = 476.0
-offset_bottom = 138.00002
+offset_left = -36.0
+offset_top = 14.800003
+offset_right = 304.0
+offset_bottom = 110.8
 texture = ExtResource("4")
 expand_mode = 1
 stretch_mode = 1
@@ -154,10 +155,10 @@ anchor_left = 0.4
 anchor_top = 0.42
 anchor_right = 0.4
 anchor_bottom = 0.42
-offset_left = 136.0
-offset_top = 41.99997
-offset_right = 476.0
-offset_bottom = 137.99997
+offset_left = 310.0
+offset_top = -100.399994
+offset_right = 650.0
+offset_bottom = -4.399994
 texture = ExtResource("4")
 expand_mode = 1
 stretch_mode = 1
@@ -221,10 +222,10 @@ anchor_left = 0.4
 anchor_top = 0.58
 anchor_right = 0.4
 anchor_bottom = 0.58
-offset_left = 136.0
-offset_top = 42.0
-offset_right = 476.0
-offset_bottom = 138.0
+offset_left = -36.0
+offset_top = -110.599976
+offset_right = 304.0
+offset_bottom = -14.599976
 texture = ExtResource("4")
 expand_mode = 1
 stretch_mode = 1
@@ -271,6 +272,73 @@ stretch_mode = 0
 metadata/gems = 25
 
 [node name="CountLabel" type="Label" parent="Item3" unique_id=539650133]
+layout_mode = 0
+offset_left = 255.0
+offset_top = 71.400024
+offset_right = 292.0
+offset_bottom = 95.400024
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 / 5"
+horizontal_alignment = 1
+
+[node name="Item4" type="TextureRect" parent="." unique_id=1805448590]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.4
+anchor_top = 0.74
+anchor_right = 0.4
+anchor_bottom = 0.74
+offset_left = 310.0
+offset_top = -225.79999
+offset_right = 650.0
+offset_bottom = -129.79999
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Icon" type="TextureRect" parent="Item4" unique_id=994537921]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 28.400024
+offset_right = 80.0
+offset_bottom = 84.400024
+texture = ExtResource("12")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Item4" unique_id=719109865]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 24.400024
+offset_right = 238.0
+offset_bottom = 50.400024
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Poison Cloud"
+
+[node name="PipBar" type="TextureRect" parent="Item4" unique_id=1158794176]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 48.400024
+offset_right = 148.0
+offset_bottom = 76.400024
+texture = ExtResource("8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostButton" type="TextureButton" parent="Item4" unique_id=822273408]
+layout_mode = 0
+offset_left = 248.0
+offset_top = 30.400024
+offset_right = 304.0
+offset_bottom = 70.400024
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/gems = 25
+
+[node name="CountLabel" type="Label" parent="Item4" unique_id=539650134]
 layout_mode = 0
 offset_left = 255.0
 offset_top = 71.400024

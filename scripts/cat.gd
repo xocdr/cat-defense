@@ -15,8 +15,8 @@ const BASE_DAMAGE := 6.0
 const DAMAGE_GROWTH := 1.3     # per character; was mistakenly left at the old 1.38^4
                                  # (4-sub-levels-per-character) rate, which let a single
                                  # merge multiply damage up to ~48x and trivialized waves
-const FIRE_COOLDOWN := 1.1
-const ATK_RANGE := 950.0
+const FIRE_COOLDOWN := 1.3
+const ATK_RANGE := 500.0
 const SPRITE_SCALE := 0.75
 const VERTICAL_NUDGE := 26.0  # lifts the sprite (and its foot-level rarity aura) up, purely cosmetic
 
@@ -30,12 +30,29 @@ const ASCENSION_BADGE_TEX := [
 	"res://Png/Ui/Up0.png", "res://Png/Ui/Up1.png", "res://Png/Ui/Up2.png", "res://Png/Ui/Up3.png",
 ]
 
+## Per-character weapon feel: same rough DPS (damage_mult / cooldown_mult stays
+## near 1.0 x FIRE_COOLDOWN), but traded off between a single hard-hitting shot
+## and many small rapid ones so different characters read as different guns
+## rather than palette-swapped stat sticks. Cycles every 4 characters, so each
+## rarity tier's 3 characters land on different archetypes and Demon God's
+## last slot (character 15) lands on Rifle — the rapid "M4A1" cat.
+const WEAPON_ARCHETYPES := [
+	{"name": "Pistol", "cooldown_mult": 1.0, "damage_mult": 1.0},
+	{"name": "Shotgun", "cooldown_mult": 1.7, "damage_mult": 1.65},
+	{"name": "Rifle", "cooldown_mult": 0.32, "damage_mult": 0.34},
+	{"name": "Sniper", "cooldown_mult": 2.4, "damage_mult": 2.5},
+]
+
+static func weapon_for_character(char_index: int) -> Dictionary:
+	return WEAPON_ARCHETYPES[(char_index - 1) % WEAPON_ARCHETYPES.size()]
+
 var character: int = 1
 var row: int = 0
 var slot: Node2D = null          # the board Slot this cat currently occupies
 var dragging: bool = false
 var ascension: int = 0
 
+var _shot_cooldown: float = FIRE_COOLDOWN
 var _cooldown: float = 0.0
 var _target: Node2D = null
 var _ascension_particles: GPUParticles2D = null
@@ -65,9 +82,11 @@ static func damage_for_character(char_index: int) -> int:
 	return int(round(BASE_DAMAGE * pow(DAMAGE_GROWTH, char_index - 1) * mult))
 
 ## This cat's actual per-shot damage, including its Demon God ascension
-## stacking on top of the character-derived base damage.
+## stacking on top of the character-derived base damage, and its weapon
+## archetype's damage trade-off against fire rate.
 func current_damage() -> int:
-	return int(round(damage_for_character(character) * pow(ASCENSION_DAMAGE_GROWTH, ascension)))
+	var weapon := weapon_for_character(character)
+	return int(round(damage_for_character(character) * pow(ASCENSION_DAMAGE_GROWTH, ascension) * weapon["damage_mult"]))
 
 func _ready() -> void:
 	add_to_group("cats")
@@ -104,6 +123,9 @@ func set_character(new_character: int) -> void:
 	anim.play("idle")
 	anim.offset.y = _foot_offset(char_index) - VERTICAL_NUDGE
 	update_aura_color(char_index)
+	_shot_cooldown = FIRE_COOLDOWN * weapon_for_character(character)["cooldown_mult"]
+	if not GameState.hunt_mode:
+		_shot_cooldown *= GameState.cat_fire_rate_multiplier(character)
 
 ## Vertical offset (in unscaled texture pixels) that puts this character's
 ## idle-frame feet on the same baseline as character 1's, regardless of how
@@ -141,19 +163,26 @@ func _process(delta: float) -> void:
 	_target = _find_target()
 	if _target and _cooldown <= 0.0:
 		_fire()
-		_cooldown = FIRE_COOLDOWN
+		_cooldown = _shot_cooldown
 
 ## Enemies walk from high x to low x, so the frontmost (most advanced,
-## closest to the wall) enemy in this cat's row has the smallest x. Always
-## re-picks the frontmost each frame instead of sticking with a previously
-## chosen target, so a faster enemy that overtakes it gets priority.
+## closest to the wall) enemy has the smallest x. Always re-picks the
+## frontmost each frame instead of sticking with a previously chosen target,
+## so a faster enemy that overtakes it gets priority.
+##
+## In Hunt mode, cats aren't confined to defending their own row — the board
+## is a cross-shaped junction rather than parallel lanes, so any cat can hit
+## any enemy within its attack range regardless of lane. Outside Hunt mode
+## (the standard 5-row grid), a cat still only engages its own row.
 func _find_target() -> Node2D:
+	var any_row := GameState.hunt_mode
+	var atk_range := ATK_RANGE if any_row else ATK_RANGE * GameState.cat_range_multiplier(character)
 	var best: Node2D = null
 	var best_x := INF
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if e.is_dead() or e.row != row or e.global_position.x < global_position.x:
+		if e.is_dead() or (not any_row and e.row != row) or e.global_position.x < global_position.x:
 			continue
-		if global_position.distance_to(e.global_position) > ATK_RANGE:
+		if global_position.distance_to(e.global_position) > atk_range:
 			continue
 		if e.global_position.x < best_x:
 			best = e
@@ -171,14 +200,17 @@ func _fire() -> void:
 	b.global_position = muzzle_pos
 	b.setup(_target, current_damage(), character)
 
-	if GameState.is_character_purchased(character):
-		var b2 := BulletScene.instantiate()
-		get_parent().add_child(b2)
-		b2.global_position = muzzle_pos
-		b2.setup(_target, current_damage(), character)
-		b2.scale = Vector2(0.7, 0.7)
-		var tw := b2.create_tween()
-		tw.tween_property(b2, "scale", Vector2(0.55, 0.55), 0.3)
+	# Every cat fires a matched double-tap regardless of whether its character
+	# has been gem-purchased — gating this on ownership made merged-but-unbought
+	# characters do half the DPS of an identical bought one, a monetization
+	# cliff unrelated to in-match progress.
+	var b2 := BulletScene.instantiate()
+	get_parent().add_child(b2)
+	b2.global_position = muzzle_pos
+	b2.setup(_target, current_damage(), character)
+	b2.scale = Vector2(0.7, 0.7)
+	var tw := b2.create_tween()
+	tw.tween_property(b2, "scale", Vector2(0.55, 0.55), 0.3)
 
 func _sfx_fire() -> void:
 	if not GameState.sound_on:

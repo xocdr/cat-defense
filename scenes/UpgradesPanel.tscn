@@ -40,6 +40,21 @@ offset_top = 30.0
 offset_right = -281.0
 offset_bottom = 76.0
 
+[node name="TreatsLabel" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = 230.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+horizontal_alignment = 0
+text = "Treats: 0"
+
 [node name="TitleRibbon" type="TextureRect" parent="." unique_id=717060412]
 layout_mode = 0
 anchor_left = 0.5
@@ -70,6 +85,41 @@ theme_override_font_sizes/font_size = 24
 text = "Upgrades"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CardRewardsRow" type="HBoxContainer" parent="." unique_id=1892004411]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.223
+anchor_top = 0.17
+anchor_right = 0.919
+anchor_bottom = 0.235
+theme_override_constants/separation = 16
+
+[node name="CardPackButton" type="Button" parent="CardRewardsRow" unique_id=1892004412]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Card Pack
+50 gems"
+
+[node name="AdCardsButton" type="Button" parent="CardRewardsRow" unique_id=1892004413]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Watch Ad
+Free Cards"
+
+[node name="CardToast" type="Label" parent="." unique_id=1892004414 visible=false]
+layout_mode = 0
+anchor_left = 0.223
+anchor_top = 0.235
+anchor_right = 0.919
+offset_top = 4.0
+offset_bottom = 34.0
+theme_override_colors/font_color = Color(0.85, 0.65, 1.0, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+text = ""
 
 [node name="UpgradeScroll" type="ScrollContainer" parent="." unique_id=1737302482]
 layout_mode = 1

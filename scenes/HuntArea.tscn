@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://cn40q4rex6k1h"]
+
+[ext_resource type="PackedScene" uid="uid://2mxq0xql2f66" path="res://scenes/Main.tscn" id="1"]
+[ext_resource type="Texture2D" uid="uid://b36y8cv8txu6l" path="res://Png/Area/MainArea.png" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/Slot.tscn" id="3"]
+[ext_resource type="Script" uid="uid://c7h2p83dlkcrw" path="res://scripts/portal_marker.gd" id="4"]
+
+[sub_resource type="Gradient" id="Gradient_hunt_danger"]
+colors = PackedColorArray(0, 0, 0, 0.85, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_hunt_danger"]
+gradient = SubResource("Gradient_hunt_danger")
+width = 220
+height = 720
+
+[node name="HuntArea" unique_id=1861114009 instance=ExtResource("1")]
+
+[node name="Background" parent="." index="0" unique_id=892420364]
+scale = Vector2(0.7655502, 0.7651435)
+texture = ExtResource("2")
+
+[node name="Wall" parent="." index="1" unique_id=1544036966]
+crate_region = Rect2(-14.4, 5.2, 23.5, 982.8)
+bar_rect = Rect2(24, 64, 190, 20)
+bg_scale = Vector2(0.7655502, 0.7651435)
+bar_horizontal = true
+attack_stop_x = -12.2
+
+[node name="SlotR0C1" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="0" unique_id=1050312147 instance=ExtResource("3")]
+position = Vector2(636, 56)
+col = 1
+
+[node name="SlotR0C2" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="1" unique_id=591190579 instance=ExtResource("3")]
+position = Vector2(706, 56)
+col = 2
+
+[node name="SlotR0C3" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="2" unique_id=62673048 instance=ExtResource("3")]
+position = Vector2(775, 57)
+col = 3
+
+[node name="SlotR0C4" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="3" unique_id=1232869138 instance=ExtResource("3")]
+position = Vector2(842, 58)
+col = 4
+
+[node name="SlotR1C0" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="4" unique_id=915172830 instance=ExtResource("3")]
+position = Vector2(175, 297)
+row = 1
+
+[node name="SlotR1C1" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="5" unique_id=1276344504 instance=ExtResource("3")]
+position = Vector2(248.09998, 297)
+row = 1
+col = 1
+
+[node name="SlotR1C2" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="6" unique_id=273919761 instance=ExtResource("3")]
+position = Vector2(324, 297)
+row = 1
+col = 2
+
+[node name="SlotR1C3" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="7" unique_id=1594403784 instance=ExtResource("3")]
+position = Vector2(397, 296)
+row = 1
+col = 3
+
+[node name="SlotR2C0" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="8" unique_id=708152742 instance=ExtResource("3")]
+position = Vector2(175, 350.5)
+row = 2
+
+[node name="SlotR2C1" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="9" unique_id=1527873516 instance=ExtResource("3")]
+position = Vector2(248.09998, 350.5)
+row = 2
+col = 1
+
+[node name="SlotR2C2" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="10" unique_id=1366909893 instance=ExtResource("3")]
+position = Vector2(323, 349)
+row = 2
+col = 2
+
+[node name="SlotR2C3" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="11" unique_id=1807894575 instance=ExtResource("3")]
+position = Vector2(397, 351)
+row = 2
+col = 3
+
+[node name="SlotR2C4" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="12" unique_id=1167413167 instance=ExtResource("3")]
+position = Vector2(468, 321)
+row = 2
+col = 4
+
+[node name="SlotR3C0" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="13" unique_id=1387854165 instance=ExtResource("3")]
+position = Vector2(625, 596)
+row = 3
+
+[node name="SlotR3C1" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="14" unique_id=682634078 instance=ExtResource("3")]
+position = Vector2(697, 596)
+row = 3
+col = 1
+
+[node name="SlotR3C2" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="15" unique_id=945364834 instance=ExtResource("3")]
+position = Vector2(765, 596)
+row = 3
+col = 2
+
+[node name="SlotR3C3" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="16" unique_id=483895155 instance=ExtResource("3")]
+position = Vector2(833, 596)
+row = 3
+col = 3
+
+[node name="SlotTrash" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="17" unique_id=331201835 instance=ExtResource("3")]
+position = Vector2(66, 596)
+row = -1
+col = -1
+is_trash = true
+
+[node name="SlotR1C4" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="18" unique_id=353413879 instance=ExtResource("3")]
+position = Vector2(101, 296)
+row = 1
+
+[node name="SlotR1C5" parent="Slots" parent_id_path=PackedInt32Array(190761558) index="19" unique_id=791495923 instance=ExtResource("3")]
+position = Vector2(101, 350)
+row = 1
+
+[node name="PortalMarker" type="Node2D" parent="World" parent_id_path=PackedInt32Array(1406467190) index="0" unique_id=1816921579]
+position = Vector2(1250, 349.1)
+script = ExtResource("4")
+
+[node name="TopBar" parent="UI" parent_id_path=PackedInt32Array(1343353335) index="0" unique_id=47843329]
+grow_horizontal = 2
+
+[node name="TitleLabel" parent="UI/BottomBar/RepairButton" parent_id_path=PackedInt32Array(1793307810) index="1" unique_id=323755634]
+text = "Heal"
+
+[node name="PausePanel" parent="UI" parent_id_path=PackedInt32Array(1343353335) index="3" unique_id=341284693]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LosePanel" parent="UI" parent_id_path=PackedInt32Array(1343353335) index="4" unique_id=110352797]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WinPanel" parent="UI" parent_id_path=PackedInt32Array(1343353335) index="5" unique_id=56060699]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DangerZoneFade" type="Sprite2D" parent="." index="5" unique_id=312959684]
+z_index = 5
+texture = SubResource("GradientTexture2D_hunt_danger")
+centered = false

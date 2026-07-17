@@ -15,11 +15,17 @@ signal died(enemy)
 @export var max_hp: int = 40
 @export var damage: int = 8
 @export var gold_reward: int = 10
+## Fraction of every hit absorbed (0..~0.65). Percentage-based rather than a
+## flat subtraction so it still matters against a maxed-out Demon God cat's
+## four-figure hits, not just early-game damage numbers.
+@export var armor_pct: float = 0.0
+@export var heal_pulse_pct: float = 0.0  # boss ability: fraction of max_hp regenerated per pulse, 0 = disabled
+@export var heal_pulse_interval: float = 6.0
 
 const ATTACK_INTERVAL := 1.0
-const WALL_STOP_X := 452.0
 const BLOCKER_STOP_DISTANCE := 62.0
 const LOSE_X := 70.0
+const ARMOR_TINT := Color(0.55, 0.75, 1.0)
 const REG_SCALE := 0.65
 const BOSS_SCALE := 0.85
 
@@ -39,6 +45,7 @@ var _attack_target: Node2D = null
 var _attack_timer: float = 0.0
 var _stop_jitter: float = 0.0
 var _aura_tween: Tween = null
+var _heal_timer: float = 0.0
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var boss_aura: Sprite2D = $BossAura
@@ -87,6 +94,9 @@ func _ready() -> void:
 		boss_aura.texture = _boss_aura_texture()
 		boss_aura.visible = true
 		_start_aura_pulse()
+	if armor_pct > 0.0 and not is_boss:
+		anim.modulate = ARMOR_TINT
+	_heal_timer = heal_pulse_interval
 
 const AURA_PULSE_SCALE := 1.15
 const AURA_PULSE_DURATION := 0.7
@@ -130,6 +140,14 @@ static func _feet_from_center(sf: SpriteFrames) -> float:
 	return (used.position.y + used.size.y) - tex.get_height() / 2.0
 
 func _process(delta: float) -> void:
+	if heal_pulse_pct > 0.0 and state != "dead":
+		_heal_timer -= delta
+		if _heal_timer <= 0.0:
+			_heal_timer = heal_pulse_interval
+			if hp < max_hp:
+				var healed := mini(max_hp - hp, maxi(1, roundi(max_hp * heal_pulse_pct)))
+				hp += healed
+				FloatText.spawn(get_parent(), global_position + Vector2(0, -46), "+%d" % healed, Color(0.5, 1.0, 0.5), 16)
 	match state:
 		"walk":
 			var blocker := _find_blocker()
@@ -141,6 +159,7 @@ func _process(delta: float) -> void:
 			else:
 				position.x -= speed * delta
 				if position.x < LOSE_X:
+					state = "reached"
 					reached_end.emit(self)
 		"attack":
 			if not is_instance_valid(_attack_target) or _attack_target.is_dead():
@@ -164,14 +183,15 @@ func _find_blocker() -> Node2D:
 	# Only block at the wall line itself: an enemy that already slipped past
 	# a broken wall must not snap back to attack it after a repair.
 	if wall and not wall.is_dead() \
-			and global_position.x <= WALL_STOP_X + _stop_jitter \
-			and global_position.x >= WALL_STOP_X - 40.0:
+			and global_position.x <= wall.attack_stop_x + _stop_jitter \
+			and global_position.x >= wall.attack_stop_x - 40.0:
 		return wall
 	return null
 
 func take_damage(amount: int) -> void:
 	if state == "dead":
 		return
+	amount = maxi(1, roundi(amount * (1.0 - armor_pct)))
 	hp -= amount
 	FloatText.spawn(get_parent(), global_position + Vector2(randf_range(-14, 14), -46), str(amount), Color(1, 1, 0.85), 15)
 	_flash()
@@ -185,7 +205,7 @@ func take_damage(amount: int) -> void:
 		died.emit(self)
 
 func _flash() -> void:
-	Fx.flash_hit(anim)
+	Fx.flash_hit(anim, ARMOR_TINT if (armor_pct > 0.0 and not is_boss) else Color.WHITE)
 
 func is_dead() -> bool:
 	return state == "dead"

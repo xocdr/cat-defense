@@ -17,8 +17,23 @@ const TUTORIAL_SLOT_SIZE := Vector2(70.0, 70.0)
 # trash_row/trash_col >= 0 means the trash cell sits inside the occupant
 # grid at that cell (that cell is skipped when spawning occupant slots);
 # -1 means the trash icon is its own square, independent of the grid.
+# "cols" is a flat Array shared by every row (a rectangular NxM board, as
+# every Area1..5 layout is). Hunt's cross-shaped board isn't described here
+# at all - see the AREA_BOARD_CONFIG[0] comment below.
 const ROW_Y := [199.8, 276.5, 354.2, 431.6, 508.5]
+const LEGACY_BG_SCALE := Vector2(0.598, 0.678)
+const HUNT_AREA_INDEX := 0
+# Hunt mode doesn't spawn slots/background/wall from this config at all - it
+# runs scenes/HuntArea.tscn, an inherited scene of Main.tscn that authors its
+# own Background/Wall/Slots/PortalMarker in the editor (see _setup_level()
+# and _spawn_slots()). Area 0's row_y is still used for enemy lanes and item
+# placement snapping (_row_y()), which aren't authored per-node in the scene.
 const AREA_BOARD_CONFIG := {
+	0: {
+		"row_y": [216.1, 475.8],
+		"item_min_x": 230.0,
+		"item_max_x": 1050.0,
+	},
 	1: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(62.2, 644.1), "trash_row": -1, "trash_col": -1},
 	2: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(242.2, 603.4), "trash_row": -1, "trash_col": -1},
 	3: {"cols": [78.9, 162.7, 245.8], "trash_pos": Vector2(66.4, 73.9), "trash_row": -1, "trash_col": -1},
@@ -29,6 +44,7 @@ const AREA_BOARD_CONFIG := {
 const WAVE_SFX_PATHS := [
 	"res://sfx/laughs sfx/evil-cat-laugh.mp3",
 	"res://sfx/laughs sfx/cartoonlaugh1.mp3",
+	"res://sfx/alarm.mp3",
 ]
 const MERGE_SFX_PATH := "res://sfx/lvlup-cat-meow.mp3"
 const DEMON_GOD_SFX_PATH := "res://sfx/laughs sfx/evil-cat-laugh.mp3"
@@ -42,7 +58,15 @@ const TEX_SOUND_ON := preload("res://Png/Ui/BtnSound.png")
 const TEX_SOUND_OFF := preload("res://Png/Ui/BtnSound Off.png")
 const TEX_VIBRA_ON := preload("res://Png/Ui/BtnVibra.png")
 const TEX_VIBRA_OFF := preload("res://Png/Ui/BtnVibra Off.png")
-const WIN_WAVE := 10
+## A level's length now scales with its number (level 1 = 10 waves, level 2 =
+## 20, ... level 8 = 80) so later levels are literally longer fights, not just
+## higher-stat versions of the same 10 waves. BASE_WAVE_CHUNK is also the size
+## of one escalation "chunk" within that run: the exponential HP/reward growth
+## resets its wave exponent every chunk (so it can't blow up to absurd/unkillable
+## numbers over an 80-wave level) while DECADE_GROWTH adds a modest extra
+## multiplier per chunk survived, so the fight still gets harder the longer it runs.
+const BASE_WAVE_CHUNK := 10
+const DECADE_GROWTH := 1.6
 const SUMMON_COST := 30
 const START_COINS := 30
 const DRAG_PICK_RADIUS := 55.0
@@ -50,16 +74,17 @@ const ITEM_MIN_X := 470.0
 const ITEM_MAX_X := 1230.0
 const ENEMY_SPAWN_X := 1340.0
 const DROP_COIN_SFX_PATH := "res://sfx/drop-coin.mp3"
-const BOSS_COIN_COUNT := 3
+const COIN_COLLECT_SFX_PATH := "res://sfx/coin.ogg"
+const BOSS_COIN_COUNT := 2
 const COIN_DROP_CFG := {
-	1: {"base": 0.75, "decay": 0.04, "floor": 0.30},
-	2: {"base": 0.70, "decay": 0.04, "floor": 0.25},
-	3: {"base": 0.65, "decay": 0.04, "floor": 0.22},
-	4: {"base": 0.60, "decay": 0.05, "floor": 0.20},
-	5: {"base": 0.55, "decay": 0.05, "floor": 0.18},
-	6: {"base": 0.50, "decay": 0.05, "floor": 0.15},
-	7: {"base": 0.45, "decay": 0.06, "floor": 0.12},
-	8: {"base": 0.40, "decay": 0.06, "floor": 0.10},
+	1: {"base": 0.53, "decay": 0.04, "floor": 0.21},
+	2: {"base": 0.49, "decay": 0.04, "floor": 0.18},
+	3: {"base": 0.46, "decay": 0.04, "floor": 0.15},
+	4: {"base": 0.42, "decay": 0.05, "floor": 0.14},
+	5: {"base": 0.39, "decay": 0.05, "floor": 0.13},
+	6: {"base": 0.35, "decay": 0.05, "floor": 0.11},
+	7: {"base": 0.32, "decay": 0.06, "floor": 0.08},
+	8: {"base": 0.28, "decay": 0.06, "floor": 0.07},
 }
 
 const ITEM_DEFS := [
@@ -68,9 +93,154 @@ const ITEM_DEFS := [
 	{"id": "boxer", "icon": "res://Png/Ui/AddonIcon7.png"},
 	{"id": "poison", "icon": "res://Png/Ui/AddonIcon9.png"},
 ]
+const ITEM_STAT_DEFS := {
+	"spikes": {"base": 12, "per_wave": 5},
+	"tnt": {"base": 150, "per_wave": 50},
+	"boxer_hp": {"base": 250, "per_wave": 80},
+	"boxer_punch": {"base": 25, "per_wave": 10},
+	"poison": {"base": 10, "per_wave": 4},
+}
+const TNT_BLAST_RADIUS := 150.0
+
+# Wall/economy formula constants
+const WALL_BASE_HP := 300
+const WALL_HP_PER_LEVEL := 200
+const SELL_VALUE_BASE := 10
+const SELL_VALUE_PER_CHARACTER := 20
+const REPAIR_COST_BASE_PCT := 0.35
+const REPAIR_COST_PER_WAVE_PCT := 0.05
+const FMT_K_THRESHOLD := 100000
+
+# Wave spawn-cadence constants
+const WAVE_START_ENEMY_BASE := 8
+const WAVE_START_ENEMY_PER_CHUNK_WAVE := 4
+const WAVE_START_ENEMY_PER_LEVEL := 2
+const WAVE_START_ENEMY_PER_CHUNK := 9
+const BOSS_WAVE_ENEMY_COUNT_MULT := 0.7
+# TD-style mid-chunk surge: from this wave-in-chunk onward, extra enemies pile
+# on top of the normal per-wave growth (and keep piling on each wave after),
+# so a chunk's back half plays like an escalating swarm instead of a flat
+# trickle - the same "rounds get noticeably heavier midway" shape most TD
+# games use. Resets every BASE_WAVE_CHUNK waves along with the rest of the
+# chunk's escalation (see BASE_WAVE_CHUNK comment above _start_wave()).
+const WAVE_SURGE_START_WAVE := 5
+const WAVE_SURGE_ENEMY_PER_WAVE := 3
+const WAVE_SURGE_SPAWN_INTERVAL_PER_WAVE := 0.05
+const FIRST_SPAWN_DELAY := 1.2
+const SPAWN_INTERVAL_BASE := 1.7
+const SPAWN_INTERVAL_PER_WAVE := 0.09
+const SPAWN_INTERVAL_PER_LEVEL := 0.02
+const SPAWN_INTERVAL_MIN := 0.55
+const SPAWN_INTERVAL_JITTER := 0.4
+const WAVE_BREAK_SECONDS := 2.2
+
+# Enemy HP/reward growth-formula constants (see _compute_enemy_base_hp/_compute_enemy_reward)
+const ENEMY_BASE_HP := 22.0
+const ENEMY_HP_GROWTH_PER_WAVE := 1.18
+const ENEMY_HP_GROWTH_PER_LEVEL := 1.13
+const ENEMY_BASE_REWARD := 12.0
+const ENEMY_REWARD_GROWTH := 1.18
+const ENEMY_REWARD_PER_LEVEL := 5
+const ENEMY_REWARD_SCALE := 0.32
+const LATE_WAVE_RAMP_THRESHOLD := 8
+const LATE_WAVE_RAMP_FACTOR := 1.05
+const LATE_LEVEL_RAMP_THRESHOLD := 6
+const LATE_LEVEL_RAMP_FACTOR := 1.06
+const ENEMY_SPAWN_Y_JITTER := 8.0
+
+# Boss/regular enemy stat-formula constants. Folder counts are tied to actual
+# asset folder counts (Png/Enemies/Enemy Boss %d, Enemy Reg %d) - keep literal.
+const BOSS_FOLDER_COUNT := 7
+const REGULAR_FOLDER_COUNT := 8
+const BOSS_HP_MULT_FINAL := 13       # softened from 16 - less of a hard step vs BOSS_HP_MULT_NORMAL
+const BOSS_HP_MULT_NORMAL := 10
+const BOSS_SPEED_MIN := 9.0
+const BOSS_SPEED_MAX := 13.0
+const BOSS_DAMAGE_BASE := 6
+const BOSS_DAMAGE_PER_WAVE := 2
+const BOSS_DAMAGE_SCALE := 5
+const BOSS_GOLD_MULT := 6
+const BOSS_FINAL_ARMOR_MIN := 0.35
+const BOSS_FINAL_ARMOR_MAX := 0.6
+const BOSS_FINAL_ARMOR_PER_WAVE := 0.01
+const BOSS_HEAL_PULSE_PCT := 0.08
+const BOSS_HEAL_PULSE_INTERVAL := 6.0
+const REGULAR_SPEED_MIN := 34.0
+const REGULAR_SPEED_MAX := 56.0
+const REGULAR_DAMAGE_BASE := 6
+const REGULAR_DAMAGE_PER_WAVE := 2
+const REGULAR_LATE_CHUNK_THRESHOLD := 6
+const REGULAR_LATE_ARMOR_CHANCE := 0.35
+const REGULAR_ARMOR_MIN := 0.25
+const REGULAR_ARMOR_MAX := 0.65
+const REGULAR_ARMOR_PER_WAVE := 0.015
+
+# Coin-drop/pickup constants
+const COIN_BURST_JITTER_X := 20.0
+const COIN_BURST_JITTER_Y := 15.0
+
+# FX/UI tween constants
+const CAT_SPAWN_TWEEN_SCALE := 0.2
+const CAT_SPAWN_TWEEN_DURATION := 0.22
+const MERGE_TWEEN_SCALE := 1.3
+const MERGE_TWEEN_DURATION := 0.25
+const DEMON_GOD_PITCH_PER_ASCENSION := 0.1
+const DEMON_GOD_SHAKE_DURATION_MIN := 0.4
+const DEMON_GOD_SHAKE_DURATION_MAX := 0.7
+const DEMON_GOD_SHAKE_STRENGTH_MIN := 10.0
+const DEMON_GOD_SHAKE_STRENGTH_MAX := 34.0
+const DEMON_GOD_FLASH_DURATION_MIN := 0.5
+const DEMON_GOD_FLASH_DURATION_MAX := 0.85
+const DEMON_GOD_BURST_BASE_COUNT := 3
+const DEMON_GOD_BURST_JITTER := 24.0
+const DEMON_GOD_BURST_JITTER_SCALE := 0.2
+const DEMON_GOD_BURST_FX_SCALE_MIN := 0.16
+const DEMON_GOD_BURST_FX_SCALE_BASE := 0.34
+const DEMON_GOD_BURST_FX_SCALE_PER_T := 0.14
+const DEMON_GOD_BURST_FX_SCALE_STEP := 0.04
+const DEMON_GOD_BURST_INTERVAL := 0.13
+const SCREEN_SHAKE_STEP_DURATION := 0.04
+const SCREEN_FLASH_ALPHA := 0.55
+const SCREEN_FLASH_Z_INDEX := 100
+const TITLE_CARD_OFFSET_X := 320.0
+const TITLE_CARD_OFFSET_Y := 40.0
+const TITLE_CARD_FONT_SIZE := 52
+const TITLE_CARD_OUTLINE_COLOR := Color(0.35, 0.05, 0.05)
+const TITLE_CARD_OUTLINE_SIZE := 12
+const TITLE_CARD_Z_INDEX := 101
+const TITLE_CARD_START_SCALE := 0.4
+const TITLE_CARD_PUNCH_SCALE := 1.15
+const TITLE_CARD_FADE_IN := 0.2
+const TITLE_CARD_SCALE_IN := 0.3
+const TITLE_CARD_SETTLE := 0.15
+const TITLE_CARD_HOLD := 1.1
+const TITLE_CARD_FADE_OUT := 0.4
+const DENY_FLASH_COLOR_BUTTON := Color(1.5, 0.4, 0.4)
+const DENY_FLASH_DURATION_BUTTON := 0.12
+const DENY_FLASH_COLOR_SLOT := Color(1.0, 0.3, 0.3, 0.6)
+const DENY_FLASH_DURATION_SLOT := 0.15
+const BANNER_START_SCALE := Vector2(0.6, 0.6)
+const BANNER_FADE_IN := 0.25
+const BANNER_SCALE_IN := 0.3
+const BANNER_HOLD := 1.3
+const BANNER_FADE_OUT := 0.4
+
+# Merge burst/glow-ring FX constants
+const MERGE_FX_LIFETIME := 0.45
+const MERGE_FX_VELOCITY_MIN := 40.0
+const MERGE_FX_VELOCITY_MAX_BASE := 90.0
+const MERGE_FX_VELOCITY_PER_TIER := 20.0
+const MERGE_FX_SCALE_MIN := 0.15
+const MERGE_FX_SCALE_BASE := 0.3
+const MERGE_FX_SCALE_PER_TIER := 0.06
+const MERGE_RING_START_SCALE := 0.2
+const MERGE_RING_ALPHA := 0.85
+const MERGE_RING_SCALE_PER_TIER := 0.15
+const MERGE_RING_TWEEN_DURATION := 0.4
 
 var level_num: int = 1
 var area_index: int = 1
+var _enemy_spawn_x: float = ENEMY_SPAWN_X
 var coins: int = START_COINS
 var wave: int = 0
 var best_character: int = 1    # highest cat character reached this match
@@ -80,6 +250,8 @@ var spawn_timer: float = 0.0
 var wave_active: bool = false
 var break_pending: bool = false
 var match_over: bool = false
+var endless_mode: bool = false    # true once a level already beaten before is re-cleared, past its final wave
+const ENDLESS_BONUS_GEMS := 2      # extra gems per wave cleared beyond a level's final wave in endless mode
 var _cheat_buffer: String = ""
 const CHEAT_CODE := "GREEDISGOOD"
 
@@ -98,6 +270,7 @@ var _place_sfx_player: AudioStreamPlayer
 var _wave_complete_sfx_player: AudioStreamPlayer
 var _level_complete_sfx_player: AudioStreamPlayer
 var _drop_sfx_player: AudioStreamPlayer
+var _coin_collect_sfx_player: AudioStreamPlayer
 var _demon_god_sfx_player: AudioStreamPlayer
 
 @onready var background: Sprite2D = $Background
@@ -163,29 +336,13 @@ func _ready() -> void:
 	_wave_sfx_player.stream = _wave_sfx_streams[0]
 	add_child(_wave_sfx_player)
 
-	_merge_sfx_player = AudioStreamPlayer.new()
-	_merge_sfx_player.stream = load(MERGE_SFX_PATH)
-	add_child(_merge_sfx_player)
-
-	_place_sfx_player = AudioStreamPlayer.new()
-	_place_sfx_player.stream = load(PLACE_SFX_PATH)
-	add_child(_place_sfx_player)
-
-	_demon_god_sfx_player = AudioStreamPlayer.new()
-	_demon_god_sfx_player.stream = load(DEMON_GOD_SFX_PATH)
-	add_child(_demon_god_sfx_player)
-
-	_wave_complete_sfx_player = AudioStreamPlayer.new()
-	_wave_complete_sfx_player.stream = load(WAVE_COMPLETE_SFX_PATH)
-	add_child(_wave_complete_sfx_player)
-
-	_level_complete_sfx_player = AudioStreamPlayer.new()
-	_level_complete_sfx_player.stream = load(LEVEL_COMPLETE_SFX_PATH)
-	add_child(_level_complete_sfx_player)
-
-	_drop_sfx_player = AudioStreamPlayer.new()
-	_drop_sfx_player.stream = load(DROP_COIN_SFX_PATH)
-	add_child(_drop_sfx_player)
+	_merge_sfx_player = _create_sfx_player(MERGE_SFX_PATH)
+	_place_sfx_player = _create_sfx_player(PLACE_SFX_PATH)
+	_demon_god_sfx_player = _create_sfx_player(DEMON_GOD_SFX_PATH)
+	_wave_complete_sfx_player = _create_sfx_player(WAVE_COMPLETE_SFX_PATH)
+	_level_complete_sfx_player = _create_sfx_player(LEVEL_COMPLETE_SFX_PATH)
+	_drop_sfx_player = _create_sfx_player(DROP_COIN_SFX_PATH)
+	_coin_collect_sfx_player = _create_sfx_player(COIN_COLLECT_SFX_PATH)
 
 	_refresh_hud()
 	_start_wave()
@@ -193,13 +350,40 @@ func _ready() -> void:
 	if not GameState.tutorial_seen and GameState.tutorial_step >= 1:
 		call_deferred("_start_main_tutorial")
 
+## Builds and attaches a one-shot SFX player for `stream_path`. Not used for
+## _wave_sfx_player, which cycles through multiple streams (see _ready above).
+func _create_sfx_player(stream_path: String) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.stream = load(stream_path)
+	add_child(player)
+	return player
+
 func _setup_level() -> void:
-	area_index = (level_num - 1) % 5 + 1
-	background.texture = load("res://Png/Area/Area%d.png" % area_index)
+	if GameState.hunt_mode:
+		area_index = HUNT_AREA_INDEX
+	else:
+		area_index = (level_num - 1) % 5 + 1
 	coins = START_COINS
-	wall.set_max_hp(300 + 150 * (level_num - 1))
-	wall.setup_broken_overlay(background.texture)
+	endless_mode = false
+	wall.set_max_hp(WALL_BASE_HP + WALL_HP_PER_LEVEL * (level_num - 1))
+
+	if GameState.hunt_mode:
+		# HuntArea.tscn already set Background/Wall's texture/scale/region via
+		# the editor Inspector - just hook up the broken-overlay texture.
+		wall.setup_broken_overlay(background.texture)
+	else:
+		var cfg: Dictionary = AREA_BOARD_CONFIG[area_index]
+		background.texture = load(cfg.get("bg_path", "res://Png/Area/Area%d.png" % area_index))
+		background.scale = cfg.get("bg_scale", LEGACY_BG_SCALE)
+		wall.setup_broken_overlay(background.texture, cfg.get("wall_crate_region", Wall.CRATE_REGION), cfg.get("bg_scale", Wall.BG_SCALE))
+		wall.set_bar_rect(cfg.get("wall_bar_rect", Wall.BAR_BACK_RECT))
 	wall.hp_changed.connect(func(_hp, _max): _refresh_hud())
+
+	if GameState.hunt_mode:
+		var marker := world.get_node_or_null("PortalMarker") as PortalMarker
+		_enemy_spawn_x = marker.position.x if marker else ENEMY_SPAWN_X
+	else:
+		_enemy_spawn_x = ENEMY_SPAWN_X
 
 func _setup_panels() -> void:
 	for panel in [pause_panel, lose_panel, win_panel]:
@@ -217,8 +401,29 @@ func _setup_panels() -> void:
 
 # ---------------------------------------------------------------- board
 
-func _spawn_slots() -> void:
+## Row Y positions for the current area: falls back to the shared ROW_Y
+## unless the area config overrides it (see AREA_BOARD_CONFIG comment above).
+func _row_y() -> Array:
+	return AREA_BOARD_CONFIG[area_index].get("row_y", ROW_Y)
+
+## Item-placement x clamp for the current area: falls back to the shared
+## ITEM_MIN_X/ITEM_MAX_X unless the area config overrides it (Hunt's
+## cross-shaped board spans a different x-range than Area1-5's rectangular grid).
+func _item_bounds() -> Vector2:
 	var cfg: Dictionary = AREA_BOARD_CONFIG[area_index]
+	return Vector2(cfg.get("item_min_x", ITEM_MIN_X), cfg.get("item_max_x", ITEM_MAX_X))
+
+func _spawn_slots() -> void:
+	if GameState.hunt_mode:
+		# HuntArea.tscn places its 23 Slot instances directly under Slots in
+		# the editor (row/col/is_trash set per-instance) instead of spawning
+		# them from a cols array here - just collect what's already there.
+		for child in slots_container.get_children():
+			if child is Slot:
+				slots.append(child)
+		return
+	var cfg: Dictionary = AREA_BOARD_CONFIG[area_index]
+	var row_y: Array = _row_y()
 	var cols: Array = cfg["cols"]
 	for r in range(ROW_Y.size()):
 		for c in range(cols.size()):
@@ -228,7 +433,7 @@ func _spawn_slots() -> void:
 			slot.row = r
 			slot.col = c
 			slot.is_trash = false
-			slot.position = Vector2(cols[c], ROW_Y[r])
+			slot.position = Vector2(cols[c], row_y[r])
 			slots_container.add_child(slot)
 			slots.append(slot)
 
@@ -242,19 +447,31 @@ func _spawn_slots() -> void:
 
 const MAX_BOARD_SLOTS := 15  # Area 1/2's 3-col layout — the capacity wave difficulty is tuned around
 
+## Hunt's cross board lets every cat target the single frontmost enemy
+## regardless of row (see Cat._find_target's any_row branch), so none of its
+## DPS is ever wasted on an empty row the way the row-locked standard grid's
+## can be. A flat slot-count ratio only prices in the extra cat count, not
+## that zero-waste targeting advantage, so Hunt's capacity ratio is raised to
+## this exponent instead of scaling linearly.
+const HUNT_CAPACITY_EXPONENT := 1.75
+
 ## Areas 4/5 hold only 9-10 board slots vs. Area 1/2/3's 15 (see
 ## AREA_BOARD_CONFIG), purely an artifact of which background art a level
 ## reuses. Enemy HP scaling is tuned against the 15-slot baseline, so it's
 ## scaled down proportionally on smaller boards — otherwise those levels get
 ## far less achievable cat DPS but face the same enemy toughness as a level
 ## with a full board, producing wild difficulty swings between levels that
-## share the same wave-scaling formula.
+## share the same wave-scaling formula. (Hunt's 19-slot cross board scales
+## the other way, upward, past the baseline for the same reason.)
 func _board_capacity_factor() -> float:
-	var cfg: Dictionary = AREA_BOARD_CONFIG[area_index]
-	var total: int = cfg["cols"].size() * ROW_Y.size()
-	if cfg["trash_row"] >= 0:
-		total -= 1
-	return float(total) / float(MAX_BOARD_SLOTS)
+	var total := 0
+	for s in slots:
+		if not s.is_trash:
+			total += 1
+	var ratio := float(total) / float(MAX_BOARD_SLOTS)
+	if GameState.hunt_mode:
+		return pow(ratio, HUNT_CAPACITY_EXPONENT)
+	return ratio
 
 func _free_slots() -> Array[Slot]:
 	var free: Array[Slot] = []
@@ -271,6 +488,19 @@ func _slot_at(pos: Vector2) -> Slot:
 		if d < best_d:
 			best = s
 			best_d = d
+	return best
+
+## Returns the occupied slot whose position is nearest `pos`, within
+## DRAG_PICK_RADIUS, or null if none qualify. Shared by drag-pickup and
+## swap-target-pick, which both only care about occupied slots (unlike
+## `_slot_at`, which also matches empty slots for buy/trash/move resolution).
+func _nearest_occupied_slot(pos: Vector2, max_dist: float = DRAG_PICK_RADIUS) -> Slot:
+	var best: Slot = null
+	var best_d := max_dist
+	for s in slots:
+		if s.occupant and s.position.distance_to(pos) < best_d:
+			best = s
+			best_d = s.position.distance_to(pos)
 	return best
 
 # ---------------------------------------------------------------- buying
@@ -291,14 +521,18 @@ func summon_character() -> int:
 func _random_character_in_tier(tier: Rarity.Tier) -> int:
 	var lo := Rarity.first_character_for_tier(tier)
 	var hi := Rarity.last_character_for_tier(tier)
+	var owned_in_range: Array[int] = []
+	for c in range(lo, hi + 1):
+		if GameState.is_character_purchased(c):
+			owned_in_range.append(c)
 	if randf() < SUMMON_PITY_CHANCE:
 		var on_board: Array[int] = []
 		for s in slots:
-			if s.occupant and s.occupant.character >= lo and s.occupant.character <= hi:
+			if s.occupant and s.occupant.character in owned_in_range:
 				on_board.append(s.occupant.character)
 		if not on_board.is_empty():
 			return on_board[randi() % on_board.size()]
-	return randi_range(lo, hi)
+	return owned_in_range[randi() % owned_in_range.size()]
 
 func _buy_at_slot(slot: Slot) -> void:
 	if match_over:
@@ -322,11 +556,16 @@ func _place_new_cat(slot: Slot, character: int) -> void:
 	world.add_child(cat)
 	slot.occupant = cat
 	_record_character(character)
-	if GameState.sound_on:
-		_place_sfx_player.play()
-	cat.scale = Vector2(0.2, 0.2)
+	_play_sfx_if_enabled(_place_sfx_player)
+	cat.scale = Vector2(CAT_SPAWN_TWEEN_SCALE, CAT_SPAWN_TWEEN_SCALE)
 	var tw := cat.create_tween()
-	tw.tween_property(cat, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(cat, "scale", Vector2.ONE, CAT_SPAWN_TWEEN_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+## Plays `player` only if the sound setting is on. Shared by every SFX call
+## site that has no extra setup (pitch/stream selection) beyond play().
+func _play_sfx_if_enabled(player: AudioStreamPlayer) -> void:
+	if GameState.sound_on:
+		player.play()
 
 func _record_character(character: int) -> void:
 	if character > best_character:
@@ -334,7 +573,7 @@ func _record_character(character: int) -> void:
 		GameState.record_merge_character(character)
 
 func sell_value(character: int) -> int:
-	return 10 + 20 * character
+	return SELL_VALUE_BASE + SELL_VALUE_PER_CHARACTER * character
 
 # ---------------------------------------------------------------- drag & merge
 
@@ -391,6 +630,10 @@ func _cancel_drag() -> void:
 ## Dismisses any active/pending Demon God Swap button state without side effects.
 func _cancel_swap_pick() -> void:
 	swap_source_cat = null
+	_dismiss_active_swap_button()
+
+## Hides the currently-shown Demon God cat Swap button, if any.
+func _dismiss_active_swap_button() -> void:
 	if _active_swap_cat:
 		_active_swap_cat.hide_swap_button()
 		_active_swap_cat = null
@@ -411,17 +654,17 @@ func _handle_swap_pick(pos: Vector2) -> void:
 	swap_source_cat = null
 	if source == null or not is_instance_valid(source):
 		return
-	var best: Cat = null
-	var best_d := DRAG_PICK_RADIUS
-	for s in slots:
-		if s.occupant and s.position.distance_to(pos) < best_d:
-			best = s.occupant
-			best_d = s.position.distance_to(pos)
+	var best_slot := _nearest_occupied_slot(pos)
+	var best: Cat = best_slot.occupant if best_slot else null
 	if best == null or best == source:
 		return
 	if Rarity.tier_for_character(best.character) == Rarity.Tier.DEMON_GOD:
 		_merge_cats(source, source.slot, best)
 
+## Tap-dispatch, in strict priority order: an in-progress swap pick, then a
+## drag-reentry guard, then item placement, coin pickup collection, dismissing
+## any shown swap button, starting a new drag, and finally a buy-at-slot
+## fallback. This order is gameplay behavior — do not reorder these checks.
 func _on_press(pos: Vector2) -> void:
 	if swap_source_cat != null:
 		_handle_swap_pick(pos)
@@ -431,26 +674,32 @@ func _on_press(pos: Vector2) -> void:
 	if armed_item != "":
 		_try_place_item(pos)
 		return
+	if _try_collect_coin_pickup(pos):
+		return
+	_dismiss_active_swap_button()
+	if _try_begin_cat_drag(pos):
+		return
+	_try_buy_at_tapped_slot(pos)
+
+func _try_collect_coin_pickup(pos: Vector2) -> bool:
 	for c in get_tree().get_nodes_in_group("coin_pickups"):
 		if not is_instance_valid(c):
 			continue
 		if c.global_position.distance_to(pos) < DRAG_PICK_RADIUS:
 			c.collect()
-			return
-	if _active_swap_cat:
-		_active_swap_cat.hide_swap_button()
-		_active_swap_cat = null
-	var best: Cat = null
-	var best_d := DRAG_PICK_RADIUS
-	for s in slots:
-		if s.occupant and s.position.distance_to(pos) < best_d:
-			best = s.occupant
-			best_d = s.position.distance_to(pos)
-	if best:
-		dragged_cat = best
-		drag_origin = best.slot
-		best.set_dragging(true)
-		return
+			return true
+	return false
+
+func _try_begin_cat_drag(pos: Vector2) -> bool:
+	var best_slot := _nearest_occupied_slot(pos)
+	if best_slot == null:
+		return false
+	dragged_cat = best_slot.occupant
+	drag_origin = best_slot.occupant.slot
+	best_slot.occupant.set_dragging(true)
+	return true
+
+func _try_buy_at_tapped_slot(pos: Vector2) -> void:
 	var slot := _slot_at(pos)
 	if slot and slot.is_free():
 		_buy_at_slot(slot)
@@ -484,9 +733,7 @@ func _handle_tap_in_place(cat: Cat) -> void:
 		cat.hide_swap_button()
 		_active_swap_cat = null
 		return
-	if _active_swap_cat:
-		_active_swap_cat.hide_swap_button()
-		_active_swap_cat = null
+	_dismiss_active_swap_button()
 	if cat.is_swap_eligible():
 		cat.show_swap_button()
 		_active_swap_cat = cat
@@ -508,29 +755,33 @@ func _move_cat(cat: Cat, slot: Slot) -> void:
 	cat.slot = slot
 	cat.row = slot.row
 	cat.position = slot.position
-	if GameState.sound_on:
-		_place_sfx_player.play()
+	_play_sfx_if_enabled(_place_sfx_player)
 
 ## Strict merge rule: only two cats of the exact same character AND exact
 ## same tier may merge. Since a character deterministically maps to one tier
 ## (Rarity.tier_for_character), matching character already implies matching
 ## tier, but both are checked explicitly to keep the rule unambiguous.
+## Merging into a new character still requires that character to be purchased
+## first (Treats, see GameState.purchase_character) — same gate as summoning.
 func _can_merge(a: Cat, b: Cat) -> bool:
 	if a.character != b.character:
 		return false
-	return Rarity.tier_for_character(a.character) == Rarity.tier_for_character(b.character)
+	if Rarity.tier_for_character(a.character) != Rarity.tier_for_character(b.character):
+		return false
+	if Rarity.tier_for_character(a.character) == Rarity.Tier.DEMON_GOD:
+		return true
+	return GameState.is_character_purchased(a.character + 1)
 
 func _merge_cats(dragged: Cat, dragged_slot: Slot, kept: Cat) -> void:
 	dragged_slot.occupant = null
 	dragged.queue_free()
-	if GameState.sound_on:
-		_merge_sfx_player.play()
+	_play_sfx_if_enabled(_merge_sfx_player)
 	var current_tier := Rarity.tier_for_character(kept.character)
 	var new_character := kept.character
-	var is_tier_up := current_tier < Rarity.Tier.DEMON_GOD
-	if is_tier_up:
-		var next_tier: Rarity.Tier = current_tier + 1
-		new_character = _random_character_in_tier(next_tier)
+	var is_tier_up := false
+	if current_tier < Rarity.Tier.DEMON_GOD:
+		new_character = kept.character + 1
+		is_tier_up = Rarity.tier_for_character(new_character) == Rarity.Tier.DEMON_GOD
 	kept.set_character(new_character)
 	_record_character(new_character)
 	var new_tier := Rarity.tier_for_character(new_character)
@@ -539,8 +790,8 @@ func _merge_cats(dragged: Cat, dragged_slot: Slot, kept: Cat) -> void:
 	Fx.flash_hit(kept)
 	FloatText.spawn(world, kept.position + Vector2(0, -30), "%s!" % Rarity.name_for_tier(new_tier), Color(0.6, 1, 0.4), 20)
 	var tw := kept.create_tween()
-	kept.scale = Vector2(1.3, 1.3)
-	tw.tween_property(kept, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	kept.scale = Vector2(MERGE_TWEEN_SCALE, MERGE_TWEEN_SCALE)
+	tw.tween_property(kept, "scale", Vector2.ONE, MERGE_TWEEN_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if new_tier == Rarity.Tier.DEMON_GOD:
 		if is_tier_up:
 			kept.set_ascension(0)
@@ -563,19 +814,20 @@ const DEMON_GOD_TITLES := [
 func _spawn_demon_god_promotion_fx(cat: Cat, ascension: int) -> void:
 	var t: float = float(ascension) / float(Cat.MAX_ASCENSION)
 	if GameState.sound_on:
-		_demon_god_sfx_player.pitch_scale = 1.0 + 0.1 * ascension
+		_demon_god_sfx_player.pitch_scale = 1.0 + DEMON_GOD_PITCH_PER_ASCENSION * ascension
 		_demon_god_sfx_player.play()
-	_shake_screen(lerpf(0.4, 0.7, t), lerpf(10.0, 34.0, t))
+	_shake_screen(lerpf(DEMON_GOD_SHAKE_DURATION_MIN, DEMON_GOD_SHAKE_DURATION_MAX, t),
+		lerpf(DEMON_GOD_SHAKE_STRENGTH_MIN, DEMON_GOD_SHAKE_STRENGTH_MAX, t))
 	var flash_color := Color(1.0, 0.85, 0.2).lerp(Color(1.0, 0.35, 0.1), t)
-	_flash_screen(flash_color, lerpf(0.5, 0.85, t))
+	_flash_screen(flash_color, lerpf(DEMON_GOD_FLASH_DURATION_MIN, DEMON_GOD_FLASH_DURATION_MAX, t))
 	var pos := cat.position
-	var burst_count := 3 + ascension
+	var burst_count := DEMON_GOD_BURST_BASE_COUNT + ascension
 	var tw := cat.create_tween()
 	for i in range(burst_count):
-		var jitter := Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0)) * (1.0 + 0.2 * t)
-		var fx_scale: float = maxf(0.16, (0.34 + 0.14 * t) - i * 0.04)
+		var jitter := Vector2(randf_range(-DEMON_GOD_BURST_JITTER, DEMON_GOD_BURST_JITTER), randf_range(-DEMON_GOD_BURST_JITTER, DEMON_GOD_BURST_JITTER)) * (1.0 + DEMON_GOD_BURST_JITTER_SCALE * t)
+		var fx_scale: float = maxf(DEMON_GOD_BURST_FX_SCALE_MIN, (DEMON_GOD_BURST_FX_SCALE_BASE + DEMON_GOD_BURST_FX_SCALE_PER_T * t) - i * DEMON_GOD_BURST_FX_SCALE_STEP)
 		tw.tween_callback(func(): Fx.explosion(world, pos + jitter, fx_scale))
-		tw.tween_interval(0.13)
+		tw.tween_interval(DEMON_GOD_BURST_INTERVAL)
 	var title_color := Color(1.0, 0.82, 0.15).lerp(Color(1.0, 0.3, 0.05), t)
 	_spawn_demon_god_title_card(DEMON_GOD_TITLES[ascension], title_color)
 
@@ -583,24 +835,24 @@ func _spawn_demon_god_promotion_fx(cat: Cat, ascension: int) -> void:
 ## its Background/Wall/Slots/World children) while leaving the UI CanvasLayer
 ## untouched, since CanvasLayer nodes ignore their parent's 2D transform.
 func _shake_screen(duration: float, strength: float) -> void:
-	var steps := maxi(4, int(duration / 0.04))
+	var steps := maxi(4, int(duration / SCREEN_SHAKE_STEP_DURATION))
 	var tw := create_tween()
 	for i in range(steps):
 		var decay := 1.0 - float(i) / steps
 		var offset := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * strength * decay
-		tw.tween_property(self, "position", offset, 0.04)
-	tw.tween_property(self, "position", Vector2.ZERO, 0.04)
+		tw.tween_property(self, "position", offset, SCREEN_SHAKE_STEP_DURATION)
+	tw.tween_property(self, "position", Vector2.ZERO, SCREEN_SHAKE_STEP_DURATION)
 
 ## Full-screen color pulse used to punctuate big moments (currently just the
 ## Demon God promotion). Added straight to the UI CanvasLayer so it overlays
 ## everything without blocking input.
 func _flash_screen(color: Color, duration: float) -> void:
 	var rect := ColorRect.new()
-	rect.color = Color(color.r, color.g, color.b, 0.55)
+	rect.color = Color(color.r, color.g, color.b, SCREEN_FLASH_ALPHA)
 	rect.anchor_right = 1.0
 	rect.anchor_bottom = 1.0
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rect.z_index = 100
+	rect.z_index = SCREEN_FLASH_Z_INDEX
 	$UI.add_child(rect)
 	var tw := rect.create_tween()
 	tw.tween_property(rect, "color:a", 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -616,29 +868,29 @@ func _spawn_demon_god_title_card(text: String, color: Color) -> void:
 	label.anchor_right = 0.5
 	label.anchor_top = 0.5
 	label.anchor_bottom = 0.5
-	label.offset_left = -320.0
-	label.offset_right = 320.0
-	label.offset_top = -40.0
-	label.offset_bottom = 40.0
-	label.pivot_offset = Vector2(320, 40)
+	label.offset_left = -TITLE_CARD_OFFSET_X
+	label.offset_right = TITLE_CARD_OFFSET_X
+	label.offset_top = -TITLE_CARD_OFFSET_Y
+	label.offset_bottom = TITLE_CARD_OFFSET_Y
+	label.pivot_offset = Vector2(TITLE_CARD_OFFSET_X, TITLE_CARD_OFFSET_Y)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 52)
+	label.add_theme_font_size_override("font_size", TITLE_CARD_FONT_SIZE)
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_outline_color", Color(0.35, 0.05, 0.05))
-	label.add_theme_constant_override("outline_size", 12)
-	label.z_index = 101
+	label.add_theme_color_override("font_outline_color", TITLE_CARD_OUTLINE_COLOR)
+	label.add_theme_constant_override("outline_size", TITLE_CARD_OUTLINE_SIZE)
+	label.z_index = TITLE_CARD_Z_INDEX
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.modulate.a = 0.0
-	label.scale = Vector2(0.4, 0.4)
+	label.scale = Vector2(TITLE_CARD_START_SCALE, TITLE_CARD_START_SCALE)
 	$UI.add_child(label)
 	var tw := label.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(label, "modulate:a", 1.0, 0.2)
-	tw.tween_property(label, "scale", Vector2(1.15, 1.15), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.chain().tween_property(label, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_SINE)
-	tw.chain().tween_interval(1.1)
-	tw.chain().tween_property(label, "modulate:a", 0.0, 0.4)
+	tw.tween_property(label, "modulate:a", 1.0, TITLE_CARD_FADE_IN)
+	tw.tween_property(label, "scale", Vector2(TITLE_CARD_PUNCH_SCALE, TITLE_CARD_PUNCH_SCALE), TITLE_CARD_SCALE_IN).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(label, "scale", Vector2.ONE, TITLE_CARD_SETTLE).set_trans(Tween.TRANS_SINE)
+	tw.chain().tween_interval(TITLE_CARD_HOLD)
+	tw.chain().tween_property(label, "modulate:a", 0.0, TITLE_CARD_FADE_OUT)
 	tw.chain().tween_callback(label.queue_free)
 
 ## Tier-colored burst + expanding glow ring on merge, scaling up with rarity
@@ -654,7 +906,7 @@ func _spawn_merge_fx(pos: Vector2, tier: Rarity.Tier) -> void:
 	var burst := GPUParticles2D.new()
 	burst.texture = Rarity.aura_texture(tier)
 	burst.amount = MERGE_FX_AMOUNT[tier]
-	burst.lifetime = 0.45
+	burst.lifetime = MERGE_FX_LIFETIME
 	burst.one_shot = true
 	burst.explosiveness = 1.0
 	burst.global_position = pos
@@ -662,10 +914,10 @@ func _spawn_merge_fx(pos: Vector2, tier: Rarity.Tier) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.spread = 180.0
 	mat.gravity = Vector3.ZERO
-	mat.initial_velocity_min = 40.0
-	mat.initial_velocity_max = 90.0 + 20.0 * tier
-	mat.scale_min = 0.15
-	mat.scale_max = 0.3 + 0.06 * tier
+	mat.initial_velocity_min = MERGE_FX_VELOCITY_MIN
+	mat.initial_velocity_max = MERGE_FX_VELOCITY_MAX_BASE + MERGE_FX_VELOCITY_PER_TIER * tier
+	mat.scale_min = MERGE_FX_SCALE_MIN
+	mat.scale_max = MERGE_FX_SCALE_BASE + MERGE_FX_SCALE_PER_TIER * tier
 	mat.color = color
 	burst.process_material = mat
 	world.add_child(burst)
@@ -675,14 +927,14 @@ func _spawn_merge_fx(pos: Vector2, tier: Rarity.Tier) -> void:
 	var ring := Sprite2D.new()
 	ring.texture = Rarity.aura_texture(tier)
 	ring.global_position = pos
-	ring.modulate = Color(color.r, color.g, color.b, 0.85)
-	ring.scale = Vector2(0.2, 0.2)
+	ring.modulate = Color(color.r, color.g, color.b, MERGE_RING_ALPHA)
+	ring.scale = Vector2(MERGE_RING_START_SCALE, MERGE_RING_START_SCALE)
 	ring.material = glow_mat
 	world.add_child(ring)
 	var ring_tw := ring.create_tween()
 	ring_tw.set_parallel(true)
-	ring_tw.tween_property(ring, "scale", Vector2(1.0, 1.0) * (1.0 + 0.15 * tier), 0.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	ring_tw.tween_property(ring, "modulate:a", 0.0, 0.4)
+	ring_tw.tween_property(ring, "scale", Vector2(1.0, 1.0) * (1.0 + MERGE_RING_SCALE_PER_TIER * tier), MERGE_RING_TWEEN_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tw.tween_property(ring, "modulate:a", 0.0, MERGE_RING_TWEEN_DURATION)
 	ring_tw.chain().tween_callback(ring.queue_free)
 
 func _swap_cats(dragged: Cat, other: Cat) -> void:
@@ -695,8 +947,7 @@ func _swap_cats(dragged: Cat, other: Cat) -> void:
 	dragged.slot = target_slot
 	dragged.row = target_slot.row
 	dragged.position = target_slot.position
-	if GameState.sound_on:
-		_place_sfx_player.play()
+	_play_sfx_if_enabled(_place_sfx_player)
 
 func _update_drag_highlight(pos: Vector2) -> void:
 	_clear_highlights()
@@ -731,50 +982,59 @@ func _on_item_pressed(id: String) -> void:
 		armed_item = id
 	_refresh_item_buttons()
 
+## Reads a per-item wave-scaled stat (BASE + PER_WAVE * wave) from ITEM_STAT_DEFS.
+func _item_stat(key: String) -> int:
+	var def: Dictionary = ITEM_STAT_DEFS[key]
+	return int(def.base + def.per_wave * wave)
+
+const ITEM_PLACEMENT_X_SLACK := 60.0
+
 func _try_place_item(pos: Vector2) -> void:
 	var id := armed_item
 	armed_item = ""
-	if pos.x < ITEM_MIN_X or pos.x > ITEM_MAX_X + 60.0:
+	var bounds := _item_bounds()
+	if pos.x < bounds.x or pos.x > bounds.y + ITEM_PLACEMENT_X_SLACK:
 		_refresh_item_buttons()
 		return
 	if not GameState.use_item(id):
 		_refresh_item_buttons()
 		return
 	var row := _nearest_row(pos.y)
-	var place := Vector2(clampf(pos.x, ITEM_MIN_X, ITEM_MAX_X), ROW_Y[row])
+	var place := Vector2(clampf(pos.x, bounds.x, bounds.y), _row_y()[row])
 	match id:
 		"spikes":
 			var trap := SpikeTrap.new()
 			trap.row = row
-			trap.damage_per_tick = 12 + 5 * wave
+			trap.damage_per_tick = _item_stat("spikes")
 			trap.position = place
 			world.add_child(trap)
 		"tnt":
 			Fx.explosion(world, pos, 0.3)
 			Fx.smoke_explosion(world, pos, 0.35)
-			var dmg := 150 + 50 * wave
+			var dmg := _item_stat("tnt")
 			for e in get_tree().get_nodes_in_group("enemies"):
-				if not e.is_dead() and e.global_position.distance_to(pos) < 150.0:
+				if not e.is_dead() and e.global_position.distance_to(pos) < TNT_BLAST_RADIUS:
 					e.take_damage(dmg)
 		"boxer":
 			var boxer := BoxingCat.new()
 			boxer.row = row
-			boxer.hp = 250 + 80 * wave
-			boxer.punch_damage = 25 + 10 * wave
+			boxer.hp = _item_stat("boxer_hp")
+			boxer.punch_damage = _item_stat("boxer_punch")
 			boxer.position = place
 			world.add_child(boxer)
 		"poison":
 			var cloud := PoisonCloud.new()
 			cloud.row = row
-			cloud.damage_per_tick = 10 + 4 * wave
+			cloud.damage_per_tick = _item_stat("poison")
 			cloud.position = place
 			world.add_child(cloud)
 	_refresh_item_buttons()
 
 func _nearest_row(y: float) -> int:
+	var row_y: Array = _row_y()
 	var best := 0
-	for r in range(ROW_Y.size()):
-		if absf(ROW_Y[r] - y) < absf(ROW_Y[best] - y):
+	for r in range(row_y.size()):
+		if absf(row_y[r] - y) < absf(row_y[best] - y):
 			best = r
 	return best
 
@@ -794,7 +1054,24 @@ func _refresh_item_buttons() -> void:
 # ---------------------------------------------------------------- wall repair
 
 func repair_cost() -> int:
-	return int(ceil(wall.missing_hp() * (0.35 + 0.05 * wave)))
+	return int(ceil(wall.missing_hp() * (REPAIR_COST_BASE_PCT + REPAIR_COST_PER_WAVE_PCT * wave)))
+
+## Final wave of the current level — level_num levels' worth of BASE_WAVE_CHUNK.
+func _win_wave() -> int:
+	return BASE_WAVE_CHUNK * level_num
+
+## Position within the current BASE_WAVE_CHUNK-sized escalation chunk (1..BASE_WAVE_CHUNK).
+func _wave_in_chunk() -> int:
+	return ((wave - 1) % BASE_WAVE_CHUNK) + 1
+
+## How many full chunks of waves have already been survived this level (0-based).
+func _wave_chunk() -> int:
+	return (wave - 1) / BASE_WAVE_CHUNK
+
+## How many waves into the mid-chunk surge we are (0 before WAVE_SURGE_START_WAVE,
+## then 1, 2, 3... each wave after) - see WAVE_SURGE_* constants above.
+func _wave_surge_steps() -> int:
+	return maxi(0, _wave_in_chunk() - (WAVE_SURGE_START_WAVE - 1))
 
 func _on_repair_pressed() -> void:
 	if match_over:
@@ -813,10 +1090,12 @@ func _start_wave() -> void:
 	wave += 1
 	wave_active = true
 	boss_to_spawn = wave % 5 == 0
-	enemies_to_spawn = 8 + 3 * wave + 2 * (level_num - 1)
+	enemies_to_spawn = WAVE_START_ENEMY_BASE + WAVE_START_ENEMY_PER_CHUNK_WAVE * _wave_in_chunk() \
+		+ WAVE_START_ENEMY_PER_LEVEL * (level_num - 1) + WAVE_START_ENEMY_PER_CHUNK * _wave_chunk() \
+		+ WAVE_SURGE_ENEMY_PER_WAVE * _wave_surge_steps()
 	if boss_to_spawn:
-		enemies_to_spawn = int(enemies_to_spawn * 0.7)
-	spawn_timer = 1.2
+		enemies_to_spawn = int(enemies_to_spawn * BOSS_WAVE_ENEMY_COUNT_MULT)
+	spawn_timer = FIRST_SPAWN_DELAY
 	if GameState.sound_on:
 		_wave_sfx_player.stream = _wave_sfx_streams[_wave_sfx_index]
 		_wave_sfx_index = (_wave_sfx_index + 1) % _wave_sfx_streams.size()
@@ -829,30 +1108,66 @@ func _process(delta: float) -> void:
 	# while the tree is paused; gameplay itself must not advance then.
 	if get_tree().paused or match_over or not wave_active:
 		return
+	if _tick_spawn_timer(delta):
+		return    # a spawn happened this frame; wave-clear can't also be true
+	if _is_wave_cleared():
+		_on_wave_cleared()
+
+## Counts down the enemy-spawn timer and spawns the next enemy/boss when it
+## elapses. Returns true if a spawn happened this frame.
+func _tick_spawn_timer(delta: float) -> bool:
 	spawn_timer -= delta
-	if spawn_timer <= 0.0 and (enemies_to_spawn > 0 or boss_to_spawn):
-		if boss_to_spawn:
-			boss_to_spawn = false
-			_spawn_enemy(true)
+	if spawn_timer > 0.0 or (enemies_to_spawn <= 0 and not boss_to_spawn):
+		return false
+	if boss_to_spawn:
+		boss_to_spawn = false
+		_spawn_enemy(true)
+	else:
+		enemies_to_spawn -= 1
+		_spawn_enemy(false)
+	spawn_timer = maxf(SPAWN_INTERVAL_BASE - SPAWN_INTERVAL_PER_WAVE * wave - SPAWN_INTERVAL_PER_LEVEL * level_num \
+		- WAVE_SURGE_SPAWN_INTERVAL_PER_WAVE * _wave_surge_steps(), SPAWN_INTERVAL_MIN) + randf() * SPAWN_INTERVAL_JITTER
+	return true
+
+func _is_wave_cleared() -> bool:
+	return enemies_to_spawn <= 0 and not boss_to_spawn and _alive_enemies() == 0 and not break_pending
+
+func _on_wave_cleared() -> void:
+	wave_active = false
+	GameState.add_gems(1)
+	GameState.add_treats(GameState.TREATS_PER_WAVE_CLEAR)
+	if wave >= _win_wave() and not endless_mode:
+		var already_completed := GameState.is_level_completed(level_num)
+		if already_completed:
+			# Replaying an already-beaten level: skip the win screen and keep
+			# going instead, so a maxed-out roster has somewhere to spend
+			# its power rather than ending the match at a fixed wave count.
+			endless_mode = true
+			var bonus := GameState.complete_level(level_num)
+			_show_banner("Endless Mode! +%d Gems" % bonus)
 		else:
-			enemies_to_spawn -= 1
-			_spawn_enemy(false)
-		spawn_timer = maxf(1.7 - 0.09 * wave - 0.02 * level_num, 0.55) + randf() * 0.4
-	elif enemies_to_spawn <= 0 and not boss_to_spawn and _alive_enemies() == 0 and not break_pending:
-		wave_active = false
-		GameState.add_gems(1)
-		if wave >= WIN_WAVE:
 			_win_match()
-		else:
-			break_pending = true
-			# SceneTreeTimers outlive scene reloads and lambda connections are
-			# not auto-cleaned on free, so guard against a freed Main.
-			get_tree().create_timer(2.2, false).timeout.connect(func():
-				if not is_instance_valid(self):
-					return
-				break_pending = false
-				if not match_over:
-					_start_wave())
+			return
+	elif endless_mode and wave > _win_wave():
+		GameState.add_gems(ENDLESS_BONUS_GEMS)
+		var new_best := GameState.record_endless_wave(level_num, wave)
+		# Only surface the milestone banner every 5 waves (same cadence as
+		# boss waves) — showing it every single wave would fire back-to-back
+		# with the "Wave N Incoming!" banner and fight over the same tween.
+		if new_best and wave % 5 == 0:
+			_show_banner("New Best: Wave %d!" % wave)
+	_schedule_wave_break()
+
+func _schedule_wave_break() -> void:
+	break_pending = true
+	# SceneTreeTimers outlive scene reloads and lambda connections are
+	# not auto-cleaned on free, so guard against a freed Main.
+	get_tree().create_timer(WAVE_BREAK_SECONDS, false).timeout.connect(func():
+		if not is_instance_valid(self):
+			return
+		break_pending = false
+		if not match_over:
+			_start_wave())
 
 func _alive_enemies() -> int:
 	var count := 0
@@ -863,33 +1178,83 @@ func _alive_enemies() -> int:
 
 func _spawn_enemy(boss: bool) -> void:
 	var enemy: Enemy = EnemyScene.instantiate()
-	var row := randi() % ROW_Y.size()
+	var row := randi() % _row_y().size()
 	enemy.row = row
 	enemy.is_boss = boss
 	enemy.wall = wall
-	var hp := int(round(22.0 * pow(1.18, wave - 1) * pow(1.13, level_num - 1) * _board_capacity_factor()))
-	# Rewards scale exponentially like enemy HP does, or buying/merging
-	# stalls out mid-match while enemies keep compounding.
-	var reward := int(round((12.0 * pow(1.18, wave - 1) + 5 * (level_num - 1)) * 0.45))
+	var hp := _compute_enemy_base_hp()
+	var reward := _compute_enemy_reward()
 	if boss:
-		enemy.enemy_index = (level_num - 1) % 7 + 1
-		enemy.max_hp = hp * (16 if wave >= WIN_WAVE else 10)
-		enemy.speed = randf_range(9.0, 13.0)
-		enemy.damage = (6 + 2 * wave) * 5
-		enemy.gold_reward = reward * 8
+		_apply_boss_stats(enemy, hp, reward)
 	else:
-		enemy.enemy_index = (level_num - 1 + randi() % 4) % 8 + 1
-		enemy.max_hp = hp
-		enemy.speed = randf_range(34.0, 56.0)
-		enemy.damage = 6 + 2 * wave
-		enemy.gold_reward = reward
-	enemy.position = Vector2(ENEMY_SPAWN_X, ROW_Y[row] + randf_range(-8.0, 8.0))
+		_apply_regular_stats(enemy, hp, reward)
+	enemy.position = Vector2(_enemy_spawn_x, _row_y()[row] + randf_range(-ENEMY_SPAWN_Y_JITTER, ENEMY_SPAWN_Y_JITTER))
 	enemy.reached_end.connect(_on_enemy_reached_end)
 	enemy.died.connect(_on_enemy_died)
 	world.add_child(enemy)
 
-func _on_enemy_reached_end(_enemy: Enemy) -> void:
+# Extra late-game ramp on top of the base per-wave/per-level growth: the
+# closing waves of each chunk and levels 6-8 push harder so enemy toughness
+# keeps pace with the multiplicative cat-damage stacking that peaks there.
+func _compute_enemy_base_hp() -> int:
+	var wave_in_chunk := _wave_in_chunk()
+	var chunk_growth := pow(DECADE_GROWTH, _wave_chunk())
+	var late_wave_factor := 1.0
+	if wave_in_chunk >= LATE_WAVE_RAMP_THRESHOLD:
+		late_wave_factor *= pow(LATE_WAVE_RAMP_FACTOR, wave_in_chunk - (LATE_WAVE_RAMP_THRESHOLD - 1))
+	if level_num >= LATE_LEVEL_RAMP_THRESHOLD:
+		late_wave_factor *= pow(LATE_LEVEL_RAMP_FACTOR, level_num - (LATE_LEVEL_RAMP_THRESHOLD - 1))
+	return int(round(ENEMY_BASE_HP * pow(ENEMY_HP_GROWTH_PER_WAVE, wave_in_chunk - 1) \
+		* pow(ENEMY_HP_GROWTH_PER_LEVEL, level_num - 1) * late_wave_factor * chunk_growth * _board_capacity_factor()))
+
+# Rewards scale exponentially like enemy HP does, or buying/merging stalls
+# out mid-match while enemies keep compounding.
+func _compute_enemy_reward() -> int:
+	var wave_in_chunk := _wave_in_chunk()
+	var chunk_growth := pow(DECADE_GROWTH, _wave_chunk())
+	return int(round((ENEMY_BASE_REWARD * pow(ENEMY_REWARD_GROWTH, wave_in_chunk - 1) * chunk_growth \
+		+ ENEMY_REWARD_PER_LEVEL * (level_num - 1)) * ENEMY_REWARD_SCALE))
+
+func _apply_boss_stats(enemy: Enemy, hp: int, reward: int) -> void:
+	enemy.enemy_index = (level_num - 1) % BOSS_FOLDER_COUNT + 1
+	enemy.max_hp = hp * (BOSS_HP_MULT_FINAL if wave >= _win_wave() else BOSS_HP_MULT_NORMAL)
+	enemy.speed = randf_range(BOSS_SPEED_MIN, BOSS_SPEED_MAX)
+	enemy.damage = (BOSS_DAMAGE_BASE + BOSS_DAMAGE_PER_WAVE * wave) * BOSS_DAMAGE_SCALE
+	enemy.gold_reward = reward * BOSS_GOLD_MULT
+	if wave >= _win_wave():
+		# A level's final-wave boss both resists (so it survives long enough
+		# to matter against a one-shot-everything Demon God cat) and
+		# regenerates, demanding sustained DPS instead of one burst.
+		enemy.armor_pct = clampf(BOSS_FINAL_ARMOR_MIN + BOSS_FINAL_ARMOR_PER_WAVE * wave, BOSS_FINAL_ARMOR_MIN, BOSS_FINAL_ARMOR_MAX)
+		enemy.heal_pulse_pct = BOSS_HEAL_PULSE_PCT
+		enemy.heal_pulse_interval = BOSS_HEAL_PULSE_INTERVAL
+
+func _apply_regular_stats(enemy: Enemy, hp: int, reward: int) -> void:
+	enemy.enemy_index = (level_num - 1 + randi() % 4) % REGULAR_FOLDER_COUNT + 1
+	enemy.max_hp = hp
+	enemy.speed = randf_range(REGULAR_SPEED_MIN, REGULAR_SPEED_MAX)
+	enemy.damage = REGULAR_DAMAGE_BASE + REGULAR_DAMAGE_PER_WAVE * wave
+	enemy.gold_reward = reward
+	var wave_in_chunk := _wave_in_chunk()
+	if (wave >= _win_wave() or (level_num >= REGULAR_LATE_CHUNK_THRESHOLD and wave_in_chunk >= REGULAR_LATE_CHUNK_THRESHOLD)) and randf() < REGULAR_LATE_ARMOR_CHANCE:
+		# Percentage-based so it still matters against a maxed Demon God
+		# cat's four-figure hits, not just early-game damage numbers.
+		enemy.armor_pct = clampf(REGULAR_ARMOR_MIN + REGULAR_ARMOR_PER_WAVE * wave, REGULAR_ARMOR_MIN, REGULAR_ARMOR_MAX)
+
+func _on_enemy_reached_end(enemy: Enemy) -> void:
 	if match_over:
+		return
+	# A live wall here means the enemy never engaged it in the attack state
+	# (e.g. HuntArea's wall sits past LOSE_X) — treat reaching the danger
+	# zone as a hit on the wall instead of an instant loss, so a full HP bar
+	# never coexists with sudden game over. In Area1-5, the wall is always
+	# already broken by the time an enemy walks this far, so this branch is
+	# a no-op there and the existing instant-loss-on-broken-wall path holds.
+	if wall and not wall.is_dead():
+		wall.take_damage(enemy.damage)
+		enemy.queue_free()
+		if wall.is_dead():
+			_lose_match()
 		return
 	_lose_match()
 
@@ -899,10 +1264,15 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	if enemy.is_boss:
 		Fx.smoke_explosion(world, enemy.global_position, 0.5)
 		_burst_coins(enemy.global_position, BOSS_COIN_COUNT)
+		var card_reward := GameState.award_cards(GameState.BOSS_KILL_CARDS)
+		var cards_dropped := 0
+		for count in card_reward.values():
+			cards_dropped += count
+		if cards_dropped > 0:
+			FloatText.spawn(world, enemy.global_position + Vector2(0, -40), "+%d Cards" % cards_dropped, Color(0.7, 0.5, 1.0), 16)
 	elif randf() < _coin_drop_chance():
 		_spawn_coin_pickup(enemy.global_position, 1)
-		if GameState.sound_on:
-			_drop_sfx_player.play()
+		_play_sfx_if_enabled(_drop_sfx_player)
 	_refresh_hud()
 
 # ---------------------------------------------------------------- coin drop
@@ -920,15 +1290,15 @@ func _spawn_coin_pickup(pos: Vector2, value: int) -> void:
 
 func _burst_coins(pos: Vector2, count: int) -> void:
 	for i in range(count):
-		var offset := Vector2(randf_range(-20.0, 20.0), randf_range(-15.0, 15.0))
+		var offset := Vector2(randf_range(-COIN_BURST_JITTER_X, COIN_BURST_JITTER_X), randf_range(-COIN_BURST_JITTER_Y, COIN_BURST_JITTER_Y))
 		_spawn_coin_pickup(pos + offset, 1)
-	if GameState.sound_on:
-		_drop_sfx_player.play()
+	_play_sfx_if_enabled(_drop_sfx_player)
 
 func _on_coin_collected(coin: CoinPickup) -> void:
 	if match_over:
 		return
 	coins += coin.value
+	_play_sfx_if_enabled(_coin_collect_sfx_player)
 	FloatText.spawn(world, coin.global_position + Vector2(0, -20), "+%d" % coin.value, Color(1, 0.85, 0.3), 16)
 	_refresh_hud()
 
@@ -937,14 +1307,15 @@ func _on_coin_collected(coin: CoinPickup) -> void:
 func _win_match() -> void:
 	match_over = true
 	_cancel_drag()
-	if GameState.sound_on:
-		_level_complete_sfx_player.play()
+	_play_sfx_if_enabled(_level_complete_sfx_player)
+	var first_clear := not GameState.is_level_completed(level_num)
 	var bonus := GameState.complete_level(level_num)
 	win_bonus_label.text = "+%d" % bonus
+	var treats_bonus := GameState.FIRST_CLEAR_TREATS if first_clear else GameState.REPLAY_CLEAR_TREATS
 	var total_cards := 0
 	for count in GameState.last_cards_awarded.values():
 		total_cards += int(count)
-	win_cards_label.text = "+%d Cat Cards" % total_cards
+	win_cards_label.text = "+%d Cat Cards   +%d Treats" % [total_cards, treats_bonus]
 	get_tree().paused = true
 	win_panel.visible = true
 
@@ -956,6 +1327,7 @@ func _lose_match() -> void:
 
 func _on_continue_pressed() -> void:
 	get_tree().paused = false
+	GameState.hunt_mode = false
 	SceneTransition.change_scene("res://scenes/Lobby.tscn")
 
 func _on_restart_pressed() -> void:
@@ -964,6 +1336,7 @@ func _on_restart_pressed() -> void:
 
 func _on_home_pressed() -> void:
 	get_tree().paused = false
+	GameState.hunt_mode = false
 	SceneTransition.change_scene("res://scenes/Lobby.tscn")
 
 # ---------------------------------------------------------------- pause
@@ -993,14 +1366,17 @@ func _refresh_toggle_textures() -> void:
 
 func _refresh_hud() -> void:
 	coin_label.text = str(coins)
-	wave_label.text = "Wave %d / %d" % [maxi(wave, 1), WIN_WAVE]
+	if endless_mode and wave > _win_wave():
+		wave_label.text = "Wave %d (Endless)" % wave
+	else:
+		wave_label.text = "Wave %d / %d" % [maxi(wave, 1), _win_wave()]
 	repair_cost_label.text = _fmt(repair_cost())
 	var can_repair := wall.missing_hp() > 0 and coins >= repair_cost()
 	repair_button.self_modulate = Color.WHITE if can_repair else Color(0.55, 0.55, 0.55)
 	_refresh_item_buttons()
 
 func _fmt(n: int) -> String:
-	if n >= 100000:
+	if n >= FMT_K_THRESHOLD:
 		return "%dk" % (n / 1000)
 	return str(n)
 
@@ -1083,25 +1459,25 @@ func _end_main_tutorial() -> void:
 
 func _flash_deny(button: TextureButton) -> void:
 	var tw := button.create_tween()
-	button.self_modulate = Color(1.5, 0.4, 0.4)
-	tw.tween_interval(0.12)
+	button.self_modulate = DENY_FLASH_COLOR_BUTTON
+	tw.tween_interval(DENY_FLASH_DURATION_BUTTON)
 	tw.tween_callback(_refresh_hud)
 
 func _flash_deny_slot(slot: Slot) -> void:
-	slot.set_highlight(true, Color(1.0, 0.3, 0.3, 0.6))
+	slot.set_highlight(true, DENY_FLASH_COLOR_SLOT)
 	var tw := create_tween()
-	tw.tween_interval(0.15)
+	tw.tween_interval(DENY_FLASH_DURATION_SLOT)
 	tw.tween_callback(slot.set_highlight.bind(false))
 
 func _show_banner(text: String) -> void:
 	wave_banner.text = text
 	wave_banner.visible = true
 	wave_banner.modulate.a = 0.0
-	wave_banner.scale = Vector2(0.6, 0.6)
+	wave_banner.scale = BANNER_START_SCALE
 	var tw := wave_banner.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(wave_banner, "modulate:a", 1.0, 0.25)
-	tw.tween_property(wave_banner, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.chain().tween_interval(1.3)
-	tw.chain().tween_property(wave_banner, "modulate:a", 0.0, 0.4)
+	tw.tween_property(wave_banner, "modulate:a", 1.0, BANNER_FADE_IN)
+	tw.tween_property(wave_banner, "scale", Vector2.ONE, BANNER_SCALE_IN).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_interval(BANNER_HOLD)
+	tw.chain().tween_property(wave_banner, "modulate:a", 0.0, BANNER_FADE_OUT)
 	tw.chain().tween_callback(func(): wave_banner.visible = false)

@@ -1,6 +1,7 @@
 extends Control
 
 const MAIN_SCENE_PATH := "res://scenes/Main.tscn"
+const HUNT_SCENE_PATH := "res://scenes/HuntArea.tscn"
 const CLICK_SFX_PATH := "res://sfx/boink.mp3"
 const TUTORIAL_OVERLAY_SCENE := preload("res://scenes/TutorialOverlay.tscn")
 
@@ -17,6 +18,7 @@ func _ready() -> void:
 	_click_player = AudioStreamPlayer.new()
 	_click_player.stream = load(CLICK_SFX_PATH)
 	add_child(_click_player)
+	map_content.get_node("HuntButton").pressed.connect(_on_hunt_pressed)
 	if not GameState.tutorial_seen and GameState.tutorial_step == 0:
 		call_deferred("_show_tutorial")
 
@@ -55,6 +57,12 @@ func _on_level_pressed(level: int) -> void:
 		_tutorial_overlay = null
 	GameState.selected_level = level
 	SceneTransition.change_scene(MAIN_SCENE_PATH)
+
+func _on_hunt_pressed() -> void:
+	_play_click()
+	GameState.hunt_mode = true
+	GameState.selected_level = 1
+	SceneTransition.change_scene(HUNT_SCENE_PATH)
 
 func _show_tutorial() -> void:
 	await SceneTransition.fade_in_finished

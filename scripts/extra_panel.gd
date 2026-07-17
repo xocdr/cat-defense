@@ -8,6 +8,7 @@ const ITEM_DEFS := [
 	{"id": "spikes", "name": "Spikes"},
 	{"id": "tnt", "name": "TNT"},
 	{"id": "boxer", "name": "Boxing Cat"},
+	{"id": "poison", "name": "Poison Cloud"},
 ]
 
 var _click_player: AudioStreamPlayer
