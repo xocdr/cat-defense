@@ -6,7 +6,7 @@ A merge-and-defend mobile game built in **Godot 4.7 (Mobile)**.
 
 ## Download
 
-Get the latest Android build here: [CatDefense.apk](https://github.com/xocdr/cat-defense/releases/download/v0.2.0/CatDefense.apk)
+Get the latest Android build here: [CatDefense.apk](https://github.com/xocdr/cat-defense/releases/download/v0.3.0/CatDefense.apk)
 
 ## Gameplay
 
