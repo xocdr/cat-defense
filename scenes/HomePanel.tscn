@@ -69,9 +69,11 @@ script = ExtResource("7")
 [node name="MapContent" type="Control" parent="MapScroll" unique_id=733943339]
 custom_minimum_size = Vector2(2200, 300)
 layout_mode = 2
+mouse_filter = 1
 
 [node name="MapTexture" type="TextureRect" parent="MapScroll/MapContent" unique_id=1371269495]
 layout_mode = 0
+mouse_filter = 1
 offset_left = -42.799988
 offset_top = -126.399994
 offset_right = 2113.2
