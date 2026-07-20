@@ -161,6 +161,15 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_stattabs")
 text = "RNG"
 
+[node name="SkinButton" type="Button" parent="." unique_id=668586610]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 68.0
+offset_right = 21.0
+offset_bottom = 84.0
+theme_override_font_sizes/font_size = 8
+text = "SKIN"
+
 [node name="ClickOverlay" type="ColorRect" parent="." unique_id=668586609]
 layout_mode = 0
 offset_left = 6.0

@@ -15,6 +15,8 @@ const DEMON_HIT_SFX := preload("res://sfx/bullets/explosion.mp3")
 var target: Node2D
 var damage: int = 10
 var speed: float = 1200.0
+var _poison_dps: float = 0.0
+var _poison_duration: float = 0.0
 var _rarity_tier: Rarity.Tier = Rarity.Tier.COMMON
 var _has_fx: bool = false
 var _sprite: Sprite2D
@@ -125,6 +127,10 @@ func setup(t: Node2D, dmg: int, character: int = 1) -> void:
 	_base_scale = _sprite.scale
 	_rarity_tier = Rarity.tier_for_character(character)
 	_has_fx = TIER_FX.has(_rarity_tier)
+	var weapon := Cat.weapon_for_character(character)
+	var poison_mult: float = weapon.get("poison_dps_mult", 0.0)
+	_poison_dps = dmg * poison_mult
+	_poison_duration = weapon.get("poison_duration", 0.0) if poison_mult > 0.0 else 0.0
 	if _has_fx:
 		_spawn_trail(Rarity.color_for_tier(_rarity_tier), TIER_FX[_rarity_tier])
 	_spawn_halo(Rarity.color_for_tier(_rarity_tier), MOTION_FX[_rarity_tier])
@@ -200,6 +206,8 @@ func _process(delta: float) -> void:
 	_update_motion_fx()
 	if dist < 20.0:
 		target.take_damage(damage)
+		if _poison_dps > 0.0:
+			target.apply_poison(_poison_dps, _poison_duration)
 		_sfx_hit()
 		if _has_fx and TIER_FX[_rarity_tier]["burst_amount"] > 0:
 			_impact_burst(Rarity.color_for_tier(_rarity_tier), TIER_FX[_rarity_tier])

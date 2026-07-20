@@ -23,6 +23,7 @@ signal died(enemy)
 @export var heal_pulse_interval: float = 6.0
 
 const ATTACK_INTERVAL := 1.0
+const POISON_TICK_INTERVAL := 0.5
 const BLOCKER_STOP_DISTANCE := 62.0
 const LOSE_X := 70.0
 const ARMOR_TINT := Color(0.55, 0.75, 1.0)
@@ -46,6 +47,10 @@ var _attack_timer: float = 0.0
 var _stop_jitter: float = 0.0
 var _aura_tween: Tween = null
 var _heal_timer: float = 0.0
+var poison_dps: float = 0.0
+var poison_timer: float = 0.0
+var _poison_tick: float = 0.0
+var _poison_vfx: AnimatedSprite2D = null
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var boss_aura: Sprite2D = $BossAura
@@ -148,6 +153,15 @@ func _process(delta: float) -> void:
 				var healed := mini(max_hp - hp, maxi(1, roundi(max_hp * heal_pulse_pct)))
 				hp += healed
 				FloatText.spawn(get_parent(), global_position + Vector2(0, -46), "+%d" % healed, Color(0.5, 1.0, 0.5), 16)
+	if poison_timer > 0.0 and state != "dead":
+		poison_timer -= delta
+		_poison_tick -= delta
+		if _poison_tick <= 0.0:
+			_poison_tick += POISON_TICK_INTERVAL
+			take_damage(maxi(1, roundi(poison_dps * POISON_TICK_INTERVAL)))
+		if poison_timer <= 0.0:
+			poison_dps = 0.0
+			_clear_poison_vfx()
 	match state:
 		"walk":
 			var blocker := _find_blocker()
@@ -188,6 +202,23 @@ func _find_blocker() -> Node2D:
 		return wall
 	return null
 
+## Refreshes (rather than stacks) this enemy's poison: takes the stronger of
+## the current and incoming tick rate, and extends the remaining duration to
+## whichever is longer. Prevents repeated Toxic hits from compounding into
+## unbounded simultaneous DoT stacks.
+func apply_poison(dps: float, duration: float) -> void:
+	if state == "dead":
+		return
+	poison_dps = max(poison_dps, dps)
+	poison_timer = max(poison_timer, duration)
+	if _poison_vfx == null:
+		_poison_vfx = Fx.poison_loop(self, Vector2(0, -anim.scale.y * 40.0))
+
+func _clear_poison_vfx() -> void:
+	if _poison_vfx and is_instance_valid(_poison_vfx):
+		_poison_vfx.queue_free()
+	_poison_vfx = null
+
 func take_damage(amount: int) -> void:
 	if state == "dead":
 		return
@@ -202,6 +233,7 @@ func take_damage(amount: int) -> void:
 		if _aura_tween:
 			_aura_tween.kill()
 		boss_aura.visible = false
+		_clear_poison_vfx()
 		died.emit(self)
 
 func _flash() -> void:

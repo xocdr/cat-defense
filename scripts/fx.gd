@@ -59,6 +59,20 @@ static func portal_loop(parent: Node, pos: Vector2, height: float, tint: Color =
 	tw.tween_property(rift, "scale", Vector2(0.92, 1.0), 1.1).set_trans(Tween.TRANS_SINE)
 	return rift
 
+## A persistent looping toxic-smoke sprite marking an enemy affected by
+## poison. Like portal_loop(), this never auto-frees — the caller owns its
+## lifetime via the returned node (Enemy frees it once its poison expires).
+static func poison_loop(parent: Node, pos: Vector2 = Vector2.ZERO, fx_scale: float = 0.35) -> AnimatedSprite2D:
+	var sprite := AnimatedSprite2D.new()
+	sprite.sprite_frames = AnimUtil.cached_frames([["fx", "res://Png/Poisonous Smoke", 16.0, true]])
+	sprite.position = pos
+	sprite.scale = Vector2(fx_scale, fx_scale)
+	sprite.z_index = 5
+	sprite.modulate = Color(0.6, 1.0, 0.5, 0.85)
+	parent.add_child(sprite)
+	sprite.play("fx")
+	return sprite
+
 static func flash_hit(target: CanvasItem, base_color: Color = Color.WHITE) -> void:
 	target.modulate = Color(3.0, 2.4, 2.4)
 	var tw := target.create_tween()

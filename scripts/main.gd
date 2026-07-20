@@ -68,7 +68,7 @@ const TEX_VIBRA_OFF := preload("res://Png/Ui/BtnVibra Off.png")
 const BASE_WAVE_CHUNK := 10
 const DECADE_GROWTH := 1.6
 const SUMMON_COST := 30
-const START_COINS := 30
+const START_COINS := 60
 const DRAG_PICK_RADIUS := 55.0
 const ITEM_MIN_X := 470.0
 const ITEM_MAX_X := 1230.0
@@ -112,8 +112,8 @@ const REPAIR_COST_PER_WAVE_PCT := 0.05
 const FMT_K_THRESHOLD := 100000
 
 # Wave spawn-cadence constants
-const WAVE_START_ENEMY_BASE := 8
-const WAVE_START_ENEMY_PER_CHUNK_WAVE := 4
+const WAVE_START_ENEMY_BASE := 6
+const WAVE_START_ENEMY_PER_CHUNK_WAVE := 3
 const WAVE_START_ENEMY_PER_LEVEL := 2
 const WAVE_START_ENEMY_PER_CHUNK := 9
 const BOSS_WAVE_ENEMY_COUNT_MULT := 0.7
@@ -126,7 +126,7 @@ const BOSS_WAVE_ENEMY_COUNT_MULT := 0.7
 const WAVE_SURGE_START_WAVE := 5
 const WAVE_SURGE_ENEMY_PER_WAVE := 3
 const WAVE_SURGE_SPAWN_INTERVAL_PER_WAVE := 0.05
-const FIRST_SPAWN_DELAY := 1.2
+const FIRST_SPAWN_DELAY := 1.8
 const SPAWN_INTERVAL_BASE := 1.7
 const SPAWN_INTERVAL_PER_WAVE := 0.09
 const SPAWN_INTERVAL_PER_LEVEL := 0.02
@@ -425,7 +425,7 @@ func _spawn_slots() -> void:
 	var cfg: Dictionary = AREA_BOARD_CONFIG[area_index]
 	var row_y: Array = _row_y()
 	var cols: Array = cfg["cols"]
-	for r in range(ROW_Y.size()):
+	for r in range(row_y.size()):
 		for c in range(cols.size()):
 			if r == cfg["trash_row"] and c == cfg["trash_col"]:
 				continue
@@ -1264,12 +1264,14 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	if enemy.is_boss:
 		Fx.smoke_explosion(world, enemy.global_position, 0.5)
 		_burst_coins(enemy.global_position, BOSS_COIN_COUNT)
+		GameState.add_treats(GameState.BOSS_KILL_TREATS)
+		GameState.record_boss_kill()
 		var card_reward := GameState.award_cards(GameState.BOSS_KILL_CARDS)
 		var cards_dropped := 0
 		for count in card_reward.values():
 			cards_dropped += count
 		if cards_dropped > 0:
-			FloatText.spawn(world, enemy.global_position + Vector2(0, -40), "+%d Cards" % cards_dropped, Color(0.7, 0.5, 1.0), 16)
+			FloatText.spawn_banner(world, enemy.global_position + Vector2(0, -40), "+%d Cards!" % cards_dropped, Color(0.75, 0.55, 1.0))
 	elif randf() < _coin_drop_chance():
 		_spawn_coin_pickup(enemy.global_position, 1)
 		_play_sfx_if_enabled(_drop_sfx_player)

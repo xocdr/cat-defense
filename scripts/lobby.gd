@@ -27,6 +27,9 @@ const BUTTON_TO_SECTION := {
 @onready var daily_gift_button: TextureButton = $DailyGiftButton
 @onready var placeholder_popup: PanelContainer = $PlaceholderPopup
 @onready var placeholder_label: Label = $PlaceholderPopup/MarginContainer/VBoxContainer/PlaceholderLabel
+@onready var achievements_button: Button = $AchievementsButton
+@onready var achievements_badge: ColorRect = $AchievementsButton/Badge
+@onready var achievements_panel: Control = $AchievementsPanel
 
 var _nav_buttons: Dictionary = {}
 var _panels: Dictionary = {}
@@ -41,6 +44,9 @@ func _ready() -> void:
 	placeholder_popup.visible = false
 	daily_gift_button.pressed.connect(_on_daily_gift_pressed)
 	$PlaceholderPopup/MarginContainer/VBoxContainer/CloseButton.pressed.connect(_on_placeholder_close_pressed)
+	achievements_button.pressed.connect(_on_achievements_pressed)
+	GameState.achievement_unlocked.connect(_on_achievement_unlocked)
+	_refresh_achievements_badge()
 	for child in $Sidebar.get_children():
 		var section_key: String = child.name
 		if BUTTON_TO_SECTION.has(section_key):
@@ -117,3 +123,15 @@ func _show_placeholder(message: String) -> void:
 func _on_placeholder_close_pressed() -> void:
 	_play_click()
 	placeholder_popup.visible = false
+
+func _on_achievements_pressed() -> void:
+	_play_click()
+	achievements_panel.visible = true
+	achievements_panel.refresh()
+	_refresh_achievements_badge()
+
+func _on_achievement_unlocked(_id: String) -> void:
+	_refresh_achievements_badge()
+
+func _refresh_achievements_badge() -> void:
+	achievements_badge.visible = GameState.has_unclaimed_achievements()

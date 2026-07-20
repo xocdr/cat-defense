@@ -3,6 +3,8 @@ class_name UpgradeRow
 
 ## Emitted when the player taps a stat tab, with the GameState.Stat value selected.
 signal stat_selected(stat: int)
+## Emitted when the player taps the skin swatch button.
+signal skin_pressed
 
 @onready var bg_locked: TextureRect = $BgLocked
 @onready var bg_unlocked: TextureRect = $BgUnlocked
@@ -20,8 +22,10 @@ signal stat_selected(stat: int)
 @onready var dmg_tab: Button = $StatTabs/DmgTab
 @onready var rate_tab: Button = $StatTabs/RateTab
 @onready var range_tab: Button = $StatTabs/RangeTab
+@onready var skin_button: Button = $SkinButton
 
 func _ready() -> void:
 	dmg_tab.pressed.connect(func(): stat_selected.emit(GameState.Stat.DAMAGE))
 	rate_tab.pressed.connect(func(): stat_selected.emit(GameState.Stat.FIRE_RATE))
 	range_tab.pressed.connect(func(): stat_selected.emit(GameState.Stat.RANGE))
+	skin_button.pressed.connect(func(): skin_pressed.emit())

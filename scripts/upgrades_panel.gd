@@ -4,6 +4,7 @@ signal navigate_to_shop
 
 const CLICK_SFX_PATH := "res://sfx/boink.mp3"
 const UPGRADE_ROW_SCENE := preload("res://scenes/UpgradeRow.tscn")
+const SKIN_PICKER_SCENE := preload("res://scenes/SkinPicker.tscn")
 
 @onready var upgrade_grid: GridContainer = $UpgradeScroll/UpgradeGrid
 @onready var treats_label: Label = $TreatsLabel
@@ -11,6 +12,7 @@ const UPGRADE_ROW_SCENE := preload("res://scenes/UpgradeRow.tscn")
 var _upgrade_controls: Dictionary = {}
 var _selected_stat: Dictionary = {}      # {char_index: GameState.Stat}, defaults to DAMAGE
 var _click_player: AudioStreamPlayer
+var _skin_picker: SkinPicker
 
 const STAT_NAMES := {
 	GameState.Stat.DAMAGE: "Damage",
@@ -26,6 +28,9 @@ func _ready() -> void:
 	$CardRewardsRow/CardPackButton.pressed.connect(_on_card_pack_pressed)
 	$CardRewardsRow/AdCardsButton.pressed.connect(_on_ad_cards_pressed)
 	GameState.treats_changed.connect(_on_treats_changed)
+	_skin_picker = SKIN_PICKER_SCENE.instantiate()
+	add_child(_skin_picker)
+	_skin_picker.skin_changed.connect(_refresh_upgrade_row)
 	_build_upgrade_grid()
 	_refresh_card_reward_buttons()
 	_refresh_treats_label()
@@ -120,6 +125,7 @@ func _build_upgrade_grid() -> void:
 		row.buy_button.pressed.connect(_on_upgrade_row_pressed.bind(i))
 		row.click_overlay.gui_input.connect(_on_upgrade_row_gui_input.bind(i))
 		row.stat_selected.connect(_on_stat_selected.bind(i))
+		row.skin_pressed.connect(_on_skin_pressed.bind(i))
 		_selected_stat[i] = GameState.Stat.DAMAGE
 		_refresh_upgrade_row(i)
 
@@ -138,13 +144,14 @@ func _refresh_upgrade_row(char_index: int) -> void:
 	row.aura.visible = owned
 	row.portrait.visible = owned
 	if owned:
-		row.portrait.texture = load("res://Png/Characters/C%d/Idle/Character%d-Idle_00.png" % [char_index, char_index])
+		row.portrait.texture = load(GameState.skin_portrait_path(char_index))
 	else:
 		row.portrait.texture = null
 	row.name_label.text = "C%d" % char_index if not owned else "Level %d" % level
 	row.pip_bar.visible = owned
 	row.cards_label.visible = owned
 	row.stat_tabs.visible = owned
+	row.skin_button.visible = owned
 
 	if owned:
 		var bar_index := clampi(int(floor(float(level - 1) / float(GameState.MAX_CAT_LEVEL - 1) * 5.0)), 0, 5)
@@ -188,6 +195,10 @@ func _on_stat_selected(stat: int, char_index: int) -> void:
 	_play_click()
 	_selected_stat[char_index] = stat
 	_refresh_upgrade_row(char_index)
+
+func _on_skin_pressed(char_index: int) -> void:
+	_play_click()
+	_skin_picker.open_for(char_index)
 
 func _on_upgrade_row_pressed(char_index: int) -> void:
 	_play_click()

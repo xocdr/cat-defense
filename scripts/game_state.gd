@@ -6,7 +6,7 @@ extends Node
 
 signal gems_changed(gems: int)
 signal treats_changed(treats: int)
-signal cards_awarded(rewards: Dictionary)
+signal achievement_unlocked(id: String)
 
 const BGM_PATH := "res://sfx/cat-defense-theme.mp3"
 const BATTLE_BGM_PATH := "res://bg music/cat-defense-ingame battle.mp3"
@@ -18,7 +18,6 @@ const SAVE_PATH := "user://savegame.cfg"
 const MAX_LEVEL := 8            # level buttons on the lobby map
 const CAT_COUNT := 15           # C1..C15 character tiers
 const MAX_ITEM_COUNT := 5
-const ITEM_IDS := ["spikes", "tnt", "boxer", "poison"]
 const ITEM_GEM_COST := 25
 const CHARACTER_UNLOCK_COSTS := [0, 100, 200, 400, 800, 1200, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500]
 const DAILY_BASE_GEMS := 20
@@ -32,6 +31,7 @@ const REPLAY_CLEAR_GEMS := 30
 const TREATS_PER_WAVE_CLEAR := 5
 const FIRST_CLEAR_TREATS := 100
 const REPLAY_CLEAR_TREATS := 25
+const BOSS_KILL_TREATS := 15         # bonus treats on top of TREATS_PER_WAVE_CLEAR whenever a boss dies
 
 # --- card-collection cat leveling ---
 enum Stat { DAMAGE, FIRE_RATE, RANGE }
@@ -41,7 +41,9 @@ const STAT_KEYS := {
 	Stat.RANGE: {"level": "range_level", "cards": "range_cards"},
 }
 const MAX_CAT_LEVEL := 20
-const CARDS_PER_CHEST := 10          # cards handed out per level-win chest
+const CARDS_PER_CHEST := 10          # base cards handed out per level-win chest (see cards_per_chest())
+const CARDS_PER_UNLOCKED_CAT := 3    # extra chest cards per cat beyond the first, so per-cat card
+									   # income doesn't dilute as the roster grows (see cards_per_chest())
 const CARD_BASE_COST := 10           # cards needed to go from level 1 -> 2
 const CARD_COST_STEP := 10           # extra cards required per subsequent level
 const GEM_BASE_COST := 20            # gems needed to go from level 1 -> 2
@@ -52,6 +54,35 @@ const CARD_PACK_CARDS := 15          # cards granted by a card pack purchase
 const AD_CARD_REWARD := 8            # cards granted by the once-a-day ad-reward chest
 const FIRE_RATE_COOLDOWN_FLOOR := 0.4  # upgrades can shrink cooldown to at most 40% of base
 const MAX_RANGE_BONUS := 1.0           # range upgrades can at most double base range (100% bonus)
+const HUNT_MODE_STAT_DAMPING := 0.5    # fire-rate/range upgrade bonuses apply at half strength in
+										 # Hunt mode (rather than not at all) so cards spent on those
+										 # tracks are never fully wasted for Hunt-focused players
+
+# --- cosmetic cat skins ---
+# {char_index: [{"id": String, "name": String, "cost": int, "dir_suffix": String}, ...]}.
+# Every character always has a free "default" entry (dir_suffix "" resolves to the
+# existing Png/Characters/C<N> art); new skins are appended here as art is commissioned.
+const SKIN_CATALOG := {}
+const DEFAULT_SKIN_ID := "default"
+
+# --- achievements ---
+# metric keys read by achievement_progress(): "levels_completed", "characters_owned",
+# "max_merge_character", "boss_kills", "gems_earned", "treats_earned", "daily_streak",
+# "max_stat_level". Rewards are paid once, on claim_achievement().
+const ACHIEVEMENTS := [
+	{"id": "first_steps", "name": "First Steps", "desc": "Complete Level 1", "metric": "levels_completed", "goal": 1, "reward_gems": 50},
+	{"id": "veteran", "name": "Veteran", "desc": "Complete all 8 levels", "metric": "levels_completed", "goal": MAX_LEVEL, "reward_gems": 300},
+	{"id": "collector", "name": "Collector", "desc": "Unlock 5 cat characters", "metric": "characters_owned", "goal": 5, "reward_gems": 200},
+	{"id": "full_roster", "name": "Full Roster", "desc": "Unlock all 15 cat characters", "metric": "characters_owned", "goal": 15, "reward_gems": 1000},
+	{"id": "merge_master", "name": "Merge Master", "desc": "Reach cat character C10 in a match", "metric": "max_merge_character", "goal": 10, "reward_gems": 250},
+	{"id": "apex_predator", "name": "Apex Predator", "desc": "Reach cat character C15 in a match", "metric": "max_merge_character", "goal": 15, "reward_gems": 500},
+	{"id": "boss_hunter", "name": "Boss Hunter", "desc": "Defeat 10 boss enemies", "metric": "boss_kills", "goal": 10, "reward_gems": 150},
+	{"id": "boss_slayer", "name": "Boss Slayer", "desc": "Defeat 50 boss enemies", "metric": "boss_kills", "goal": 50, "reward_gems": 400},
+	{"id": "gem_hoarder", "name": "Gem Hoarder", "desc": "Earn 5000 gems in total", "metric": "gems_earned", "goal": 5000, "reward_gems": 100},
+	{"id": "treat_lover", "name": "Treat Lover", "desc": "Earn 1000 treats in total", "metric": "treats_earned", "goal": 1000, "reward_gems": 100},
+	{"id": "loyal", "name": "Loyal", "desc": "Reach a 5-day daily-gift streak", "metric": "daily_streak", "goal": DAILY_MAX_STREAK, "reward_gems": 100},
+	{"id": "upgrade_enthusiast", "name": "Upgrade Enthusiast", "desc": "Level any cat stat to level 10", "metric": "max_stat_level", "goal": 10, "reward_gems": 150},
+]
 
 # --- persistent state ---
 var gems: int = 50
@@ -70,6 +101,13 @@ var daily_streak: int = 0
 var daily_last_claim: String = ""           # "YYYY-MM-DD"
 var ad_cards_last_claim: String = ""        # "YYYY-MM-DD", last ad-reward card chest claim
 var tutorial_seen: bool = false             # first-launch tutorial completed/skipped
+var owned_skins: Dictionary = {}            # {char_index: [skin_id, ...]}, "default" always implicitly owned
+var equipped_skins: Dictionary = {}         # {char_index: skin_id}, defaults to "default"
+var claimed_achievements: Array = []        # ids of achievements whose reward has been claimed
+var stat_boss_kills: int = 0                # lifetime boss enemies defeated, across all matches
+var stat_gems_earned: int = 0               # lifetime gems earned (not counting spending), for achievements
+var stat_treats_earned: int = 0             # lifetime treats earned (not counting spending), for achievements
+var best_daily_streak: int = 0              # highest daily_streak ever reached (daily_streak itself can reset)
 
 # --- transient (not saved) ---
 var selected_level: int = 1                 # set by the lobby before entering Main
@@ -94,6 +132,8 @@ func _setup_theme_font() -> void:
 
 func add_gems(amount: int) -> void:
 	gems += amount
+	if amount > 0:
+		stat_gems_earned += amount
 	gems_changed.emit(gems)
 	save()
 
@@ -109,7 +149,14 @@ func spend_gems(amount: int) -> bool:
 
 func add_treats(amount: int) -> void:
 	treats += amount
+	if amount > 0:
+		stat_treats_earned += amount
 	treats_changed.emit(treats)
+	save()
+
+## Called whenever a boss enemy dies in a match; feeds the boss-kill achievements.
+func record_boss_kill() -> void:
+	stat_boss_kills += 1
 	save()
 
 func spend_treats(amount: int) -> bool:
@@ -186,6 +233,65 @@ func record_merge_character(character: int) -> void:
 				_mark_cat_unlocked(i)
 		save()
 
+# ---------------------------------------------------------------- cosmetic skins
+
+func _skin_catalog_for(char_index: int) -> Array:
+	return SKIN_CATALOG.get(char_index, [])
+
+func _skin_entry(char_index: int, skin_id: String) -> Dictionary:
+	for entry in _skin_catalog_for(char_index):
+		if entry["id"] == skin_id:
+			return entry
+	return {}
+
+func is_skin_owned(char_index: int, skin_id: String) -> bool:
+	if skin_id == DEFAULT_SKIN_ID:
+		return true
+	return skin_id in owned_skins.get(char_index, [])
+
+func can_purchase_skin(char_index: int, skin_id: String) -> bool:
+	if is_skin_owned(char_index, skin_id):
+		return false
+	var entry := _skin_entry(char_index, skin_id)
+	if entry.is_empty():
+		return false
+	return gems >= int(entry["cost"])
+
+func purchase_skin(char_index: int, skin_id: String) -> bool:
+	if not can_purchase_skin(char_index, skin_id):
+		return false
+	var entry := _skin_entry(char_index, skin_id)
+	if not spend_gems(int(entry["cost"])):
+		return false
+	var owned: Array = owned_skins.get(char_index, [])
+	owned.append(skin_id)
+	owned_skins[char_index] = owned
+	save()
+	return true
+
+func equip_skin(char_index: int, skin_id: String) -> bool:
+	if not is_skin_owned(char_index, skin_id):
+		return false
+	equipped_skins[char_index] = skin_id
+	save()
+	return true
+
+func equipped_skin_for(char_index: int) -> String:
+	return equipped_skins.get(char_index, DEFAULT_SKIN_ID)
+
+## Folder-name suffix for the given character/skin, e.g. "" for the default skin
+## (resolves to the existing Png/Characters/C<N> art) or "_Halloween" for a
+## commissioned alternate at Png/Characters/C<N>_Halloween.
+func skin_dir_suffix(char_index: int, skin_id: String) -> String:
+	return String(_skin_entry(char_index, skin_id).get("dir_suffix", ""))
+
+## Idle-portrait path for the character's currently equipped skin. Shared by the
+## Upgrades row portrait and any other UI that needs a static preview image, so
+## the skin-aware path convention can't drift between call sites.
+func skin_portrait_path(char_index: int) -> String:
+	var suffix := skin_dir_suffix(char_index, equipped_skin_for(char_index))
+	return "res://Png/Characters/C%d%s/Idle/Character%d-Idle_00.png" % [char_index, suffix, char_index]
+
 # ---------------------------------------------------------------- cat cards / leveling
 
 ## Per-character save entry: {"unlocked": bool, "level": int, "current_cards": int,
@@ -212,12 +318,6 @@ func _mark_cat_unlocked(char_index: int) -> void:
 		return
 	cat_data[char_index - 1]["unlocked"] = true
 
-func cat_level(char_index: int) -> int:
-	return cat_stat_level(char_index, Stat.DAMAGE)
-
-func cat_cards(char_index: int) -> int:
-	return cat_stat_cards(char_index, Stat.DAMAGE)
-
 func cat_stat_level(char_index: int, stat: int) -> int:
 	return int(cat_data[char_index - 1][STAT_KEYS[stat]["level"]])
 
@@ -238,22 +338,11 @@ func cat_stat_gem_cost(char_index: int, stat: int) -> int:
 		return 0
 	return int(round(GEM_BASE_COST * pow(GEM_COST_GROWTH, level - 1)))
 
-## Cards required for the damage track (kept for the pre-existing damage-only call sites).
-func cat_cards_required(char_index: int) -> int:
-	return cat_stat_cards_required(char_index, Stat.DAMAGE)
-
-## Gems required for the damage track (kept for the pre-existing damage-only call sites).
-func cat_level_gem_cost(char_index: int) -> int:
-	return cat_stat_gem_cost(char_index, Stat.DAMAGE)
-
 func can_upgrade_cat_stat(char_index: int, stat: int) -> bool:
 	if not is_cat_unlocked(char_index) or cat_stat_level(char_index, stat) >= MAX_CAT_LEVEL:
 		return false
 	return cat_stat_cards(char_index, stat) >= cat_stat_cards_required(char_index, stat) \
 		and gems >= cat_stat_gem_cost(char_index, stat)
-
-func can_upgrade_cat_level(char_index: int) -> bool:
-	return can_upgrade_cat_stat(char_index, Stat.DAMAGE)
 
 ## Spends cards + gems and levels up the given stat. Returns false if requirements aren't met.
 func upgrade_cat_stat(char_index: int, stat: int) -> bool:
@@ -269,10 +358,6 @@ func upgrade_cat_stat(char_index: int, stat: int) -> bool:
 	entry[keys["level"]] = int(entry[keys["level"]]) + 1
 	save()
 	return true
-
-## Spends cards + gems and levels up the damage stat (kept for pre-existing call sites).
-func upgrade_cat(char_index: int) -> bool:
-	return upgrade_cat_stat(char_index, Stat.DAMAGE)
 
 ## Picks which stat (damage/fire-rate/range) a card should land on for the given cat,
 ## pity-weighting toward whichever stat is furthest behind the cat's highest-leveled
@@ -298,6 +383,16 @@ func _pick_pity_stat(char_index: int) -> int:
 		if roll < 0:
 			return stats[i]
 	return stats[stats.size() - 1]
+
+## Chest size for a level-win card drop: a flat base plus a per-cat bonus so that
+## as the roster grows, cards-per-cat from a chest doesn't shrink just because
+## more cats are competing for the same fixed pool.
+func cards_per_chest() -> int:
+	var unlocked_count := 0
+	for entry in cat_data:
+		if bool(entry["unlocked"]):
+			unlocked_count += 1
+	return CARDS_PER_CHEST + CARDS_PER_UNLOCKED_CAT * maxi(unlocked_count - 1, 0)
 
 ## Randomly distributes `total_cards` one-at-a-time among currently unlocked cats,
 ## each card landing on a stat (damage/fire-rate/range) for that cat, pity-weighted
@@ -341,15 +436,6 @@ func claim_ad_cards() -> Dictionary:
 	save()
 	return award_cards(AD_CARD_REWARD)
 
-## Permanent damage multiplier a character earns from card-collection leveling.
-## Diminishing returns past level 10 (+10%/level up to 10, +5%/level after)
-## so the permanent grind doesn't compound forever against enemy scaling.
-func cat_damage_multiplier(char_index: int) -> float:
-	var level := cat_level(char_index)
-	var capped_level: int = mini(level, 10)
-	var extra_levels: int = maxi(level - 10, 0)
-	return 1.0 + 0.1 * (capped_level - 1) + 0.05 * extra_levels
-
 ## Shared diminishing-returns curve (+10%/level to 10, +5%/level after) used by all
 ## three stat tracks so the grind pacing feels consistent across damage/fire-rate/range.
 func _stat_bonus(level: int) -> float:
@@ -357,16 +443,24 @@ func _stat_bonus(level: int) -> float:
 	var extra_levels: int = maxi(level - 10, 0)
 	return 0.1 * (capped_level - 1) + 0.05 * extra_levels
 
+## Permanent damage multiplier a character earns from card-collection leveling.
+func cat_damage_multiplier(char_index: int) -> float:
+	return 1.0 + _stat_bonus(cat_stat_level(char_index, Stat.DAMAGE))
+
 ## Multiplier applied to a cat's shot cooldown (< 1.0 = faster firing), floored so
-## upgrades can't shrink it to zero. Ignored in Hunt mode — see cat.gd.
+## upgrades can't shrink it to zero. Halved in Hunt mode — see HUNT_MODE_STAT_DAMPING.
 func cat_fire_rate_multiplier(char_index: int) -> float:
 	var bonus := _stat_bonus(cat_stat_level(char_index, Stat.FIRE_RATE))
+	if hunt_mode:
+		bonus *= HUNT_MODE_STAT_DAMPING
 	return maxf(1.0 - bonus, FIRE_RATE_COOLDOWN_FLOOR)
 
 ## Multiplier applied to a cat's attack range (> 1.0 = longer range), capped at
-## MAX_RANGE_BONUS. Ignored in Hunt mode — see cat.gd.
+## MAX_RANGE_BONUS. Halved in Hunt mode — see HUNT_MODE_STAT_DAMPING.
 func cat_range_multiplier(char_index: int) -> float:
 	var bonus := _stat_bonus(cat_stat_level(char_index, Stat.RANGE))
+	if hunt_mode:
+		bonus *= HUNT_MODE_STAT_DAMPING
 	return 1.0 + minf(bonus, MAX_RANGE_BONUS)
 
 # ---------------------------------------------------------------- levels
@@ -378,7 +472,7 @@ func is_level_completed(level: int) -> bool:
 	return level in completed_levels
 
 ## Returns the gem bonus earned for beating `level`. Also rolls a card chest
-## (see `last_cards_awarded` / `cards_awarded` signal for the drop breakdown).
+## (see `last_cards_awarded` for the drop breakdown).
 func complete_level(level: int) -> int:
 	var first_clear := not is_level_completed(level)
 	if first_clear:
@@ -388,8 +482,7 @@ func complete_level(level: int) -> int:
 	var bonus := FIRST_CLEAR_GEMS if first_clear else REPLAY_CLEAR_GEMS
 	add_gems(bonus)  # also saves
 	add_treats(FIRST_CLEAR_TREATS if first_clear else REPLAY_CLEAR_TREATS)
-	last_cards_awarded = award_cards(CARDS_PER_CHEST)
-	cards_awarded.emit(last_cards_awarded)
+	last_cards_awarded = award_cards(cards_per_chest())
 	return bonus
 
 ## Records a new personal-best endless wave for `level`. Returns true if it
@@ -421,6 +514,7 @@ func claim_daily() -> int:
 		if gap_days > 1:
 			daily_streak = 0  # missed a day: streak starts over
 	daily_streak = clampi(daily_streak + 1, 1, DAILY_MAX_STREAK)
+	best_daily_streak = maxi(best_daily_streak, daily_streak)
 	daily_last_claim = _today()
 	var reward := DAILY_BASE_GEMS * daily_streak
 	add_gems(reward)  # also saves
@@ -481,6 +575,64 @@ func set_bgm(path: String, fade_duration: float = 0.5) -> void:
 	if music_on:
 		_music_player.play()
 
+# ---------------------------------------------------------------- achievements
+
+## Current value of the metric an achievement definition tracks.
+func achievement_progress(ach: Dictionary) -> int:
+	match String(ach["metric"]):
+		"levels_completed": return completed_levels.size()
+		"characters_owned": return owned_characters.size()
+		"max_merge_character": return max_merge_character
+		"boss_kills": return stat_boss_kills
+		"gems_earned": return stat_gems_earned
+		"treats_earned": return stat_treats_earned
+		"daily_streak": return best_daily_streak
+		"max_stat_level":
+			var highest := 0
+			for entry in cat_data:
+				highest = maxi(highest, int(entry["level"]))
+				highest = maxi(highest, int(entry["fire_rate_level"]))
+				highest = maxi(highest, int(entry["range_level"]))
+			return highest
+		_: return 0
+
+func is_achievement_complete(ach: Dictionary) -> bool:
+	return achievement_progress(ach) >= int(ach["goal"])
+
+func is_achievement_claimed(id: String) -> bool:
+	return id in claimed_achievements
+
+func can_claim_achievement(id: String) -> bool:
+	if is_achievement_claimed(id):
+		return false
+	for ach in ACHIEVEMENTS:
+		if ach["id"] == id:
+			return is_achievement_complete(ach)
+	return false
+
+## Grants the gem reward for a completed-but-unclaimed achievement. Returns the
+## gems awarded, or 0 if the achievement isn't ready to claim.
+func claim_achievement(id: String) -> int:
+	if not can_claim_achievement(id):
+		return 0
+	var reward := 0
+	for ach in ACHIEVEMENTS:
+		if ach["id"] == id:
+			reward = int(ach["reward_gems"])
+			break
+	claimed_achievements.append(id)
+	achievement_unlocked.emit(id)
+	add_gems(reward)  # also saves
+	return reward
+
+## True if any achievement is complete and awaiting its reward — drives a
+## notification badge on the Achievements entry point.
+func has_unclaimed_achievements() -> bool:
+	for ach in ACHIEVEMENTS:
+		if not is_achievement_claimed(ach["id"]) and is_achievement_complete(ach):
+			return true
+	return false
+
 # ---------------------------------------------------------------- persistence
 
 func save() -> void:
@@ -494,6 +646,13 @@ func save() -> void:
 	cfg.set_value("profile", "owned_characters", owned_characters)
 	cfg.set_value("profile", "max_merge_character", max_merge_character)
 	cfg.set_value("profile", "best_endless_wave", best_endless_wave)
+	cfg.set_value("profile", "owned_skins", owned_skins)
+	cfg.set_value("profile", "equipped_skins", equipped_skins)
+	cfg.set_value("profile", "claimed_achievements", claimed_achievements)
+	cfg.set_value("profile", "stat_boss_kills", stat_boss_kills)
+	cfg.set_value("profile", "stat_gems_earned", stat_gems_earned)
+	cfg.set_value("profile", "stat_treats_earned", stat_treats_earned)
+	cfg.set_value("profile", "best_daily_streak", best_daily_streak)
 	cfg.set_value("settings", "music_on", music_on)
 	cfg.set_value("settings", "sound_on", sound_on)
 	cfg.set_value("settings", "vibra_on", vibra_on)
@@ -519,6 +678,13 @@ func load_save() -> void:
 		@warning_ignore("integer_division")
 		max_merge_character = clampi((legacy_level - 1) / 4 + 1, 1, CAT_COUNT)
 	best_endless_wave = cfg.get_value("profile", "best_endless_wave", {})
+	owned_skins = cfg.get_value("profile", "owned_skins", {})
+	equipped_skins = cfg.get_value("profile", "equipped_skins", {})
+	claimed_achievements = cfg.get_value("profile", "claimed_achievements", [])
+	stat_boss_kills = cfg.get_value("profile", "stat_boss_kills", 0)
+	stat_gems_earned = cfg.get_value("profile", "stat_gems_earned", 0)
+	stat_treats_earned = cfg.get_value("profile", "stat_treats_earned", 0)
+	best_daily_streak = cfg.get_value("profile", "best_daily_streak", 0)
 	owned_characters = cfg.get_value("profile", "owned_characters", [])
 	var legacy_pips: Array = cfg.get_value("profile", "cat_upgrades", [])
 	var saved_cat_data: Array = cfg.get_value("profile", "cat_data", [])
@@ -550,5 +716,6 @@ func load_save() -> void:
 	vibra_on = cfg.get_value("settings", "vibra_on", vibra_on)
 	tutorial_seen = cfg.get_value("settings", "tutorial_seen", tutorial_seen)
 	daily_streak = cfg.get_value("daily", "streak", daily_streak)
+	best_daily_streak = maxi(best_daily_streak, daily_streak)  # migration: backfill from existing streak saves
 	daily_last_claim = cfg.get_value("daily", "last_claim", daily_last_claim)
 	ad_cards_last_claim = cfg.get_value("daily", "ad_cards_last_claim", ad_cards_last_claim)

@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://yt6i35y1usen" path="res://Png/Ui/Icon_Shop.png" id="6"]
 [ext_resource type="Texture2D" uid="uid://vef3jk8ri18x" path="res://Png/Ui/BtnHelpOff.png" id="7"]
 [ext_resource type="Texture2D" uid="uid://cuikg1gtwjwte" path="res://Png/Ui/DaillyIcon.png" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/AchievementsPanel.tscn" id="11"]
 
 [node name="Lobby" type="Control" unique_id=32337541]
 layout_mode = 3
@@ -80,6 +81,33 @@ offset_bottom = 161.0
 texture_normal = ExtResource("10")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="AchievementsButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.81
+anchor_right = 0.81
+offset_left = -55.0
+offset_top = 95.0
+offset_right = 55.0
+offset_bottom = 140.0
+text = "Achievements"
+theme_override_font_sizes/font_size = 10
+clip_text = true
+
+[node name="Badge" type="ColorRect" parent="AchievementsButton"]
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -12.0
+offset_top = -6.0
+offset_right = 0.0
+offset_bottom = 6.0
+color = Color(0.937, 0.298, 0.298, 1)
+
+[node name="AchievementsPanel" parent="." instance=ExtResource("11")]
+visible = false
 
 [node name="Sidebar" type="VBoxContainer" parent="." unique_id=17120759]
 layout_mode = 1

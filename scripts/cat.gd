@@ -33,14 +33,17 @@ const ASCENSION_BADGE_TEX := [
 ## Per-character weapon feel: same rough DPS (damage_mult / cooldown_mult stays
 ## near 1.0 x FIRE_COOLDOWN), but traded off between a single hard-hitting shot
 ## and many small rapid ones so different characters read as different guns
-## rather than palette-swapped stat sticks. Cycles every 4 characters, so each
-## rarity tier's 3 characters land on different archetypes and Demon God's
-## last slot (character 15) lands on Rifle — the rapid "M4A1" cat.
+## rather than palette-swapped stat sticks. Cycles every 5 characters, so each
+## rarity tier's 3 characters land on different archetypes.
+## Toxic trades direct-hit damage for a poison DoT applied on impact
+## (see Bullet.setup/Enemy.apply_poison): poison_dps_mult is a fraction of the
+## bullet's own damage dealt per second over poison_duration seconds.
 const WEAPON_ARCHETYPES := [
 	{"name": "Pistol", "cooldown_mult": 1.0, "damage_mult": 1.0},
 	{"name": "Shotgun", "cooldown_mult": 1.7, "damage_mult": 1.65},
 	{"name": "Rifle", "cooldown_mult": 0.32, "damage_mult": 0.34},
 	{"name": "Sniper", "cooldown_mult": 2.4, "damage_mult": 2.5},
+	{"name": "Toxic", "cooldown_mult": 1.0, "damage_mult": 0.6, "poison_dps_mult": 0.5, "poison_duration": 3.0},
 ]
 
 static func weapon_for_character(char_index: int) -> Dictionary:
@@ -70,6 +73,9 @@ var _aura_tween: Tween = null
 # float/sink in the slot square when a merge swaps the displayed character.
 # Cache each character's foot-baseline offset (from its idle frame's opaque
 # bounding box) once per character so every character's feet line up.
+## Keyed only by char_index, not by equipped skin — fine while every skin shares
+## its character's canvas size, but a future skin with a different idle-frame
+## canvas would need this keyed by (char_index, skin_id) instead.
 static var _foot_offset_cache: Dictionary = {}
 static var _foot_reference: float = NAN
 
@@ -115,7 +121,8 @@ func set_character(new_character: int) -> void:
 	hide_swap_button()
 	character = new_character
 	var char_index := display_character(character)
-	var base_dir := "res://Png/Characters/C%d" % char_index
+	var skin_suffix := GameState.skin_dir_suffix(char_index, GameState.equipped_skin_for(char_index))
+	var base_dir := "res://Png/Characters/C%d%s" % [char_index, skin_suffix]
 	anim.sprite_frames = AnimUtil.cached_frames([
 		["idle", base_dir.path_join("Idle"), 12.0, true],
 		["shoot", base_dir.path_join("Shoot"), 20.0, false],
@@ -124,8 +131,7 @@ func set_character(new_character: int) -> void:
 	anim.offset.y = _foot_offset(char_index) - VERTICAL_NUDGE
 	update_aura_color(char_index)
 	_shot_cooldown = FIRE_COOLDOWN * weapon_for_character(character)["cooldown_mult"]
-	if not GameState.hunt_mode:
-		_shot_cooldown *= GameState.cat_fire_rate_multiplier(character)
+	_shot_cooldown *= GameState.cat_fire_rate_multiplier(character)
 
 ## Vertical offset (in unscaled texture pixels) that puts this character's
 ## idle-frame feet on the same baseline as character 1's, regardless of how
@@ -176,7 +182,7 @@ func _process(delta: float) -> void:
 ## (the standard 5-row grid), a cat still only engages its own row.
 func _find_target() -> Node2D:
 	var any_row := GameState.hunt_mode
-	var atk_range := ATK_RANGE if any_row else ATK_RANGE * GameState.cat_range_multiplier(character)
+	var atk_range := ATK_RANGE * GameState.cat_range_multiplier(character)
 	var best: Node2D = null
 	var best_x := INF
 	for e in get_tree().get_nodes_in_group("enemies"):
