@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://bswc24sbb720n" path="res://Png/Ui/WinBonus.png" id="13"]
 [ext_resource type="Texture2D" uid="uid://x4v4cvdd85v5" path="res://Png/Ui/CoinBar.png" id="14"]
 [ext_resource type="Texture2D" uid="uid://dr0bgk0fn0c5y" path="res://Png/Ui/CoinIcon.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://sbcj4gpcyib1" path="res://Png/Ui/AddonIcon9.png" id="15_ebg2g"]
 [ext_resource type="Texture2D" uid="uid://be8ghwl0bcko" path="res://Png/Ui/WaveBar.png" id="16"]
 [ext_resource type="Texture2D" uid="uid://cvopths88g1oo" path="res://Png/Ui/YellowBox.png" id="17"]
 [ext_resource type="Texture2D" uid="uid://dtb12cy7sky82" path="res://Png/Ui/AddonIcon8.png" id="18"]
@@ -22,8 +23,6 @@
 [ext_resource type="Texture2D" uid="uid://d2g7x1knukkqp" path="res://Png/Ui/AddonIcon7.png" id="20"]
 [ext_resource type="Texture2D" uid="uid://dho3xf7202dht" path="res://Png/Ui/AddonBoxNumber.png" id="21"]
 [ext_resource type="Texture2D" uid="uid://dype0f5biuc60" path="res://Png/Ui/WallIcon.png" id="22"]
-[ext_resource type="Texture2D" uid="uid://sbcj4gpcyib1" path="res://Png/Ui/AddonIcon9.png" id="23"]
-[ext_resource type="Texture2D" uid="uid://sp0ghcg5w25w" path="res://Png/Characters/C1/Idle/Character1-Idle_00.png" id="23"]
 
 [node name="Main" type="Node2D" unique_id=1310500096]
 process_mode = 3
@@ -52,6 +51,7 @@ layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 70.0
+grow_horizontal = 2
 mouse_filter = 2
 
 [node name="CoinBar" type="TextureRect" parent="UI/TopBar" unique_id=572142825]
@@ -91,10 +91,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -282.0
+offset_left = -303.0
 offset_top = 10.0
-offset_right = -92.0
-offset_bottom = 64.0
+offset_right = -117.0
+offset_bottom = 80.0
 grow_horizontal = 0
 mouse_filter = 2
 texture = ExtResource("16")
@@ -114,13 +114,15 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SettingsButton" type="TextureButton" parent="UI/TopBar" unique_id=1152716246]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -76.0
-offset_top = 12.0
-offset_right = -24.0
-offset_bottom = 64.0
+offset_left = -92.0
+offset_top = 16.0
+offset_right = -28.0
+offset_bottom = 75.0
+grow_horizontal = 0
 texture_normal = ExtResource("4")
 ignore_texture_size = true
 stretch_mode = 4
@@ -157,8 +159,8 @@ mouse_filter = 2
 [node name="RepairButton" type="TextureButton" parent="UI/BottomBar" unique_id=1793307810]
 layout_mode = 0
 offset_left = 385.0
-offset_top = 14.0
-offset_right = 620.0
+offset_top = -5.0
+offset_right = 686.0
 offset_bottom = 92.0
 texture_normal = ExtResource("9")
 ignore_texture_size = true
@@ -171,10 +173,10 @@ anchor_left = 0.081
 anchor_top = 0.128
 anchor_right = 0.91700006
 anchor_bottom = 0.846
-offset_left = -0.034999847
-offset_top = 0.015999794
-offset_right = -140.49501
-offset_bottom = 0.012001038
+offset_left = -2.3810081
+offset_top = 1.583993
+offset_right = -173.01703
+offset_bottom = -5.0620117
 mouse_filter = 2
 texture = ExtResource("22")
 expand_mode = 1
@@ -182,15 +184,16 @@ stretch_mode = 5
 
 [node name="TitleLabel" type="Label" parent="UI/BottomBar/RepairButton" unique_id=323755634]
 layout_mode = 0
-offset_left = 73.0
-offset_top = 12.0
-offset_right = 227.0
-offset_bottom = 42.0
+offset_left = 106.0
+offset_top = 17.0
+offset_right = 248.0
+offset_bottom = 52.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.4, 0.2, 0.02, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 25
 text = "Repair Wall"
+horizontal_alignment = 1
 
 [node name="CostIcon" type="TextureRect" parent="UI/BottomBar/RepairButton" unique_id=1714446205]
 layout_mode = 0
@@ -205,10 +208,10 @@ stretch_mode = 5
 
 [node name="CostLabel" type="Label" parent="UI/BottomBar/RepairButton" unique_id=2140978474]
 layout_mode = 0
-offset_left = 105.0
-offset_top = 34.0
-offset_right = 229.0
-offset_bottom = 62.0
+offset_left = 109.0
+offset_top = 48.0
+offset_right = 233.0
+offset_bottom = 76.0
 theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
 theme_override_colors/font_outline_color = Color(0.4, 0.2, 0.02, 1)
 theme_override_constants/outline_size = 5
@@ -216,23 +219,25 @@ theme_override_font_sizes/font_size = 18
 text = "0"
 
 [node name="Item0" type="TextureButton" parent="UI/BottomBar" unique_id=90565078]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -280.0
-offset_top = 10.0
-offset_right = -198.0
-offset_bottom = 92.0
+offset_left = -299.0
+offset_top = 4.0
+offset_right = -199.0
+offset_bottom = 104.0
+grow_horizontal = 0
 texture_normal = ExtResource("17")
 ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Icon" type="TextureRect" parent="UI/BottomBar/Item0" unique_id=2081322531]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 70.0
-offset_bottom = 60.0
+offset_left = 13.0
+offset_top = -4.0
+offset_right = 89.0
+offset_bottom = 62.0
 mouse_filter = 2
 texture = ExtResource("18")
 expand_mode = 1
@@ -267,23 +272,25 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Item1" type="TextureButton" parent="UI/BottomBar" unique_id=1771315004]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -188.0
-offset_top = 10.0
-offset_right = -106.0
-offset_bottom = 92.0
+offset_left = -203.0
+offset_top = 4.0
+offset_right = -103.0
+offset_bottom = 104.0
+grow_horizontal = 0
 texture_normal = ExtResource("17")
 ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Icon" type="TextureRect" parent="UI/BottomBar/Item1" unique_id=2087981263]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 70.0
-offset_bottom = 60.0
+offset_left = 5.0
+offset_top = -4.0
+offset_right = 91.0
+offset_bottom = 67.0
 mouse_filter = 2
 texture = ExtResource("19")
 expand_mode = 1
@@ -316,23 +323,25 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Item2" type="TextureButton" parent="UI/BottomBar" unique_id=37291561]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -96.0
-offset_top = 10.0
-offset_right = -14.0
-offset_bottom = 92.0
+offset_left = -104.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 102.0
+grow_horizontal = 0
 texture_normal = ExtResource("17")
 ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Icon" type="TextureRect" parent="UI/BottomBar/Item2" unique_id=536197510]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 70.0
-offset_bottom = 60.0
+offset_left = 13.0
+offset_top = -12.0
+offset_right = 91.0
+offset_bottom = 66.0
 mouse_filter = 2
 texture = ExtResource("20")
 expand_mode = 1
@@ -366,30 +375,32 @@ text = "0/5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Item3" type="TextureButton" parent="UI/BottomBar"]
-layout_mode = 0
+[node name="Item3" type="TextureButton" parent="UI/BottomBar" unique_id=190624439]
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -372.0
-offset_top = 10.0
-offset_right = -290.0
-offset_bottom = 92.0
+offset_left = -397.0
+offset_top = 4.0
+offset_right = -297.0
+offset_bottom = 104.0
+grow_horizontal = 0
 texture_normal = ExtResource("17")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Icon" type="TextureRect" parent="UI/BottomBar/Item3"]
+[node name="Icon" type="TextureRect" parent="UI/BottomBar/Item3" unique_id=353250710]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 70.0
-offset_bottom = 60.0
+offset_left = 9.0
+offset_top = 1.0
+offset_right = 89.0
+offset_bottom = 76.0
 mouse_filter = 2
-texture = ExtResource("23")
+texture = ExtResource("15_ebg2g")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Badge" type="TextureRect" parent="UI/BottomBar/Item3"]
+[node name="Badge" type="TextureRect" parent="UI/BottomBar/Item3" unique_id=882369131]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 56.0
@@ -400,7 +411,7 @@ texture = ExtResource("21")
 expand_mode = 1
 stretch_mode = 1
 
-[node name="CountLabel" type="Label" parent="UI/BottomBar/Item3/Badge"]
+[node name="CountLabel" type="Label" parent="UI/BottomBar/Item3/Badge" unique_id=1085946636]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -423,6 +434,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Dim" type="ColorRect" parent="UI/PausePanel" unique_id=1647341679]
 layout_mode = 0
@@ -531,12 +544,36 @@ text = "Resume"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="HomeButton" type="TextureButton" parent="UI/PausePanel" unique_id=1651292842]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -95.0
+offset_top = 494.0
+offset_right = 95.0
+offset_bottom = 548.0
+texture_normal = ExtResource("9")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="HomeLabel" type="Label" parent="UI/PausePanel/HomeButton" unique_id=1651292843]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Home"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="LosePanel" type="Control" parent="UI" unique_id=110352797]
 visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Dim" type="ColorRect" parent="UI/LosePanel" unique_id=246817242]
 layout_mode = 0
@@ -606,6 +643,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Dim" type="ColorRect" parent="UI/WinPanel" unique_id=68992158]
 layout_mode = 0

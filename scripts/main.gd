@@ -295,6 +295,7 @@ var _demon_god_sfx_player: AudioStreamPlayer
 @onready var vibra_toggle: TextureButton = $UI/PausePanel/ToggleBar/Toggles/VibraToggle
 @onready var pause_restart_button: TextureButton = $UI/PausePanel/RestartButton
 @onready var resume_button: TextureButton = $UI/PausePanel/ResumeButton
+@onready var pause_home_button: TextureButton = $UI/PausePanel/HomeButton
 
 @onready var lose_panel: Control = $UI/LosePanel
 @onready var lose_restart_button: TextureButton = $UI/LosePanel/Panel/RestartButton
@@ -391,6 +392,7 @@ func _setup_panels() -> void:
 		panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	pause_restart_button.pressed.connect(_on_restart_pressed)
 	resume_button.pressed.connect(_on_resume_pressed)
+	pause_home_button.pressed.connect(_on_home_pressed)
 	lose_restart_button.pressed.connect(_on_restart_pressed)
 	lose_home_button.pressed.connect(_on_home_pressed)
 	continue_button.pressed.connect(_on_continue_pressed)

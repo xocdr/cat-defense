@@ -14,8 +14,6 @@ extends Node2D
 ## reassigns these same fields at runtime.
 
 signal hp_changed(hp: int, max_hp: int)
-signal broken
-signal repaired
 
 const BAR_BACK_RECT := Rect2(398, 182, 20, 360)
 const BAR_INSET := 3.0
@@ -98,7 +96,6 @@ func take_damage(amount: int) -> void:
 	hp_changed.emit(hp, max_hp)
 	if hp <= 0:
 		_set_broken(true)
-		broken.emit()
 
 func repair_full() -> void:
 	var was_broken := hp <= 0
@@ -107,7 +104,6 @@ func repair_full() -> void:
 	hp_changed.emit(hp, max_hp)
 	if was_broken:
 		_set_broken(false)
-		repaired.emit()
 
 func is_dead() -> bool:
 	return hp <= 0

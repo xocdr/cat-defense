@@ -114,7 +114,7 @@ offset_right = 235.0
 offset_bottom = 42.800003
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "Spikes"
+text = "TNT"
 
 [node name="PipBar" type="TextureRect" parent="Item1" unique_id=1235479272]
 layout_mode = 0
@@ -181,7 +181,7 @@ offset_right = 242.0
 offset_bottom = 51.600037
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "TNT"
+text = "Spikes"
 
 [node name="PipBar" type="TextureRect" parent="Item2" unique_id=596018744]
 layout_mode = 0

@@ -5,7 +5,6 @@ extends Node2D
 ## driven directly by the cat's character identity (1..15, see Rarity for
 ## the tier each character belongs to).
 
-signal drag_started(cat: Cat)
 signal swap_pressed(cat: Cat)
 
 const BulletScene := preload("res://scenes/Bullet.tscn")

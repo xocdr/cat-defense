@@ -6,6 +6,7 @@ const CLICK_SFX_PATH := "res://sfx/boink.mp3"
 const UPGRADE_ROW_SCENE := preload("res://scenes/UpgradeRow.tscn")
 const SKIN_PICKER_SCENE := preload("res://scenes/SkinPicker.tscn")
 
+@onready var upgrade_scroll: ScrollContainer = $UpgradeScroll
 @onready var upgrade_grid: GridContainer = $UpgradeScroll/UpgradeGrid
 @onready var treats_label: Label = $TreatsLabel
 
@@ -34,6 +35,8 @@ func _ready() -> void:
 	_build_upgrade_grid()
 	_refresh_card_reward_buttons()
 	_refresh_treats_label()
+	upgrade_scroll.resized.connect(_resize_upgrade_rows)
+	_resize_upgrade_rows.call_deferred()
 
 func _play_click() -> void:
 	if GameState.sound_on:
@@ -128,6 +131,23 @@ func _build_upgrade_grid() -> void:
 		row.skin_pressed.connect(_on_skin_pressed.bind(i))
 		_selected_stat[i] = GameState.Stat.DAMAGE
 		_refresh_upgrade_row(i)
+
+## GridContainer sizes each column to its widest child's minimum size only —
+## it does not stretch columns to fill leftover space like BoxContainer does —
+## so the per-row width has to be computed and applied here instead.
+func _resize_upgrade_rows() -> void:
+	var columns := upgrade_grid.columns
+	var h_separation: int = upgrade_grid.get_theme_constant("h_separation")
+	var scrollbar_width := 0.0
+	var v_scrollbar := upgrade_scroll.get_v_scroll_bar()
+	if v_scrollbar != null and v_scrollbar.visible:
+		scrollbar_width = v_scrollbar.size.x
+	var available_width: float = upgrade_scroll.size.x - scrollbar_width
+	var row_width: float = (available_width - h_separation * (columns - 1)) / float(columns)
+	if row_width <= 0.0:
+		return
+	for row: UpgradeRow in _upgrade_controls.values():
+		row.custom_minimum_size.x = row_width
 
 func _refresh_upgrade_row(char_index: int) -> void:
 	var row: UpgradeRow = _upgrade_controls.get(char_index)
